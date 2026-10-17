@@ -134,3 +134,9 @@ Some behaviour can't be read from the API, so it's written into the code from [O
 - how directions are written for each model
 
 If a model rejects the audio format and names the one it wants, the page and the script switch to that format automatically.
+
+## License
+
+The code is released under the [MIT License](LICENSE).
+
+The audio clips in `samples/` were generated with each provider's models through OpenRouter and are included as voice previews. They are not covered by the MIT License. Their use is governed by the terms of the provider that made them.
