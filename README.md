@@ -4,18 +4,20 @@ A bring-your-own-key playground for the text-to-speech models on [OpenRouter](ht
 
 It is plain HTML with no build step and no backend. Your browser calls OpenRouter's API directly with your key, and the model and voice lists come live from OpenRouter, so new models show up on their own.
 
+**Try it at [acjacobson.github.io/playground-tts](https://acjacobson.github.io/playground-tts/)**, or browse the [voice library](https://acjacobson.github.io/playground-tts/voices.html). The site is served by GitHub Pages straight from this repo.
+
 It was inspired by Simon Willison's [Gemini TTS Playground](https://simonwillison.net/2026/Sep/23/gemini-tts-playground/), extended from Gemini to every speech model OpenRouter offers. When the samples were last generated (October 2026) that meant 35 models from 14 providers, with 830 voices.
 
 ## Quick start
 
 1. Get an API key at [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys).
-2. Open the playground:
+2. Open the [hosted playground](https://acjacobson.github.io/playground-tts/), or run it from a copy of this repo:
 
    ```bash
    open index.html
    ```
 
-   Or serve the folder over HTTP, which also gives you waveforms for saved samples:
+   Serving the folder over HTTP instead also gives you waveforms for saved samples:
 
    ```bash
    python3 -m http.server 8765
