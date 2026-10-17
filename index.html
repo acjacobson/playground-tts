@@ -1,0 +1,2015 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>OpenRouter TTS Playground</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f2efe9;
+    --card: #fffdf9;
+    --sunken: #f7f4ee;
+    --field: #ffffff;
+    --ink: #211d1a;
+    --muted: #6e675f;
+    --line: #e5dfd5;
+    --line-strong: #d2c9bb;
+    --accent: #c2410c;
+    --accent-hover: #a5370a;
+    --accent-ink: #ffffff;
+    --accent-soft: #fbeadf;
+    --ok: #157a3c;
+    --err: #b42318;
+    --err-soft: #fdeceb;
+    --wave: #e3bfaa;
+    --wave-played: #c2410c;
+    --focus: #f0a37a;
+    --shadow: 0 1px 2px rgb(60 40 20 / 5%), 0 6px 20px rgb(60 40 20 / 5%);
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --bg: #141311;
+      --card: #1c1a18;
+      --sunken: #181715;
+      --field: #121110;
+      --ink: #f0ebe4;
+      --muted: #a69e94;
+      --line: #2e2a27;
+      --line-strong: #45403a;
+      --accent: #f97316;
+      --accent-hover: #fb8a3c;
+      --accent-ink: #1c0d03;
+      --accent-soft: #3a2215;
+      --ok: #4ade80;
+      --err: #f87171;
+      --err-soft: #3a1a1a;
+      --wave: #5c3c2a;
+      --wave-played: #f97316;
+      --focus: #c2410c;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  a { color: var(--accent); }
+  button, input, textarea, select { font: inherit; color: inherit; }
+  button {
+    cursor: pointer;
+    border: 1px solid var(--line-strong);
+    background: var(--card);
+    border-radius: 9px;
+    padding: 8px 13px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  button:hover:not(:disabled) { background: var(--sunken); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  input, textarea, select {
+    width: 100%;
+    min-height: 40px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    background: var(--field);
+    padding: 9px 11px;
+  }
+  input[type="checkbox"] { width: auto; min-height: 0; margin: 0; accent-color: var(--accent); }
+  input[type="file"] { padding: 6px; font-size: 13px; }
+  textarea { resize: vertical; min-height: 96px; line-height: 1.5; }
+  label, .label { display: block; font-size: 12px; font-weight: 650; margin-bottom: 6px; }
+  .opt { font-weight: 500; color: var(--muted); }
+  h1 { font-size: clamp(30px, 6vw, 44px); letter-spacing: -0.035em; line-height: 1.05; margin: 10px 0 12px; }
+  h2 { font-size: 17px; letter-spacing: -0.01em; margin: 0; }
+  h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 22px 0 6px; }
+  p { margin: 6px 0; }
+  code { font-family: var(--mono); font-size: 0.92em; }
+
+  .shell { max-width: 1240px; margin: 0 auto; padding: 28px 32px 56px; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 750; letter-spacing: 0.18em; }
+  .onair { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+  .badge { font-size: 12px; border: 1px solid var(--line-strong); border-radius: 999px; padding: 4px 11px; color: var(--muted); background: var(--card); }
+  header { margin: 30px 0 26px; max-width: 760px; }
+  .lede { color: var(--muted); font-size: 16px; }
+
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; align-items: start; }
+  .col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px; box-shadow: var(--shadow); min-width: 0; }
+  .section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .small { font-size: 12px; }
+  .muted { color: var(--muted); }
+  button.small { padding: 5px 10px; font-size: 12.5px; }
+  button.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+  button.ghost:hover:not(:disabled) { background: var(--sunken); color: var(--ink); }
+  .hint { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; }
+  .hint.warn { color: var(--accent); }
+  .field { margin-bottom: 16px; }
+  .grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+
+  /* Model card */
+  .model-desc { color: var(--muted); font-size: 13.5px; margin: 12px 0 10px; }
+  .model-id { font-family: var(--mono); font-size: 12px; color: var(--muted); word-break: break-all; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--sunken); border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .chip.on { color: var(--ink); }
+  .chip.on::before { content: "✓ "; color: var(--ok); font-weight: 700; }
+  .chip.price { color: var(--ink); font-weight: 650; }
+  .tips { margin: 14px 0 0; padding: 10px 12px 10px 28px; background: var(--accent-soft); border-radius: 10px; font-size: 13px; }
+  .tips li + li { margin-top: 4px; }
+  .load-error { background: var(--err-soft); color: var(--err); border-radius: 10px; padding: 10px 12px; font-size: 13.5px; margin-top: 12px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; background: var(--sunken); border: 1px solid var(--line); padding: 4px; border-radius: 12px; margin-bottom: 20px; }
+  .tabs button { flex: 1; background: transparent; border-color: transparent; color: var(--muted); padding: 8px 6px; }
+  .tabs button[aria-pressed="true"] { background: var(--card); color: var(--ink); border-color: var(--line); box-shadow: 0 1px 3px rgb(0 0 0 / 6%); }
+
+  /* Voice picker */
+  .vp-wrap { display: flex; gap: 6px; align-items: stretch; }
+  .vp { position: relative; flex: 1; min-width: 0; }
+  .vp-input { padding-right: 34px; }
+  .vp-toggle { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); border: 0; background: transparent; padding: 4px 9px; color: var(--muted); font-size: 12px; }
+  .vp-toggle:hover:not(:disabled) { background: transparent; color: var(--ink); }
+  .vp-list { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 4px); max-height: 280px; overflow: auto; margin: 0; padding: 4px; list-style: none; background: var(--card); border: 1px solid var(--line-strong); border-radius: 10px; box-shadow: 0 12px 32px rgb(0 0 0 / 16%); }
+  .vp-opt { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 7px 10px; border-radius: 7px; cursor: pointer; font-size: 14px; }
+  .vp-opt.active { background: var(--sunken); }
+  .vp-opt.selected { font-weight: 650; }
+  .vp-opt.selected::after { content: "✓"; color: var(--accent); margin-left: auto; }
+  .vp-detail { font-family: var(--mono); font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+  .vp-empty { padding: 8px 10px; font-size: 13px; color: var(--muted); }
+  .vp-play { flex: none; padding: 0 12px; font-size: 12px; }
+
+  /* Conversation */
+  .speaker { display: grid; grid-template-columns: 12px minmax(0, 0.8fr) minmax(0, 1.4fr) auto; gap: 10px; align-items: end; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .swatch { width: 12px; height: 12px; border-radius: 50%; margin-bottom: 14px; }
+  .speaker label, .cmp-row label { margin-bottom: 4px; }
+  .icon { padding: 4px 9px; font-size: 13px; line-height: 1.2; min-width: 32px; }
+  .speaker .icon, .cmp-row .icon { min-height: 40px; }
+  .turn { border: 1px solid var(--line); border-left: 4px solid var(--spk, var(--line-strong)); border-radius: 12px; padding: 12px 14px 14px; margin-top: 10px; background: var(--sunken); }
+  .turn-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .turn-top strong { font-size: 11.5px; letter-spacing: 0.1em; color: var(--muted); }
+  .turn-actions { display: flex; gap: 4px; }
+  .turn .grid2 { margin-bottom: 8px; }
+  .turn textarea { min-height: 64px; }
+  .add-row { margin-top: 10px; }
+
+  /* Compare */
+  .cmp-row { display: grid; grid-template-columns: 20px minmax(0, 1.2fr) minmax(0, 1fr) auto; gap: 10px; align-items: end; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .cmp-n { font-weight: 700; color: var(--muted); font-size: 12px; margin-bottom: 11px; }
+
+  /* Reference clip */
+  .ref-box { border: 1px dashed var(--line-strong); border-radius: 12px; padding: 12px; }
+  .ref-box audio { margin-top: 8px; }
+
+  /* Advanced */
+  details > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸"; color: var(--muted); display: inline-block; transition: transform 0.15s; }
+  details[open] > summary::before { transform: rotate(90deg); }
+  details.advanced { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 14px; }
+  details.advanced > summary { font-weight: 650; font-size: 14px; }
+  .adv-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; margin: 10px 0 0; }
+
+  /* Generate */
+  .generate { display: flex; gap: 10px; align-items: stretch; margin-top: 20px; }
+  .primary { flex: 1; display: flex; justify-content: center; align-items: center; gap: 10px; background: var(--accent); color: var(--accent-ink); border-color: var(--accent); padding: 12px 18px; font-size: 15px; }
+  .primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+  kbd { font: 600 11px var(--mono); padding: 2px 6px; border-radius: 5px; background: rgb(255 255 255 / 20%); }
+  .form-error { background: var(--err-soft); color: var(--err); border-radius: 10px; padding: 9px 12px; font-size: 13.5px; margin: 12px 0 0; }
+
+  /* Connection */
+  .pill { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 3px 9px; }
+  .key-row { display: flex; gap: 6px; }
+  .key-row input { min-width: 0; font-family: var(--mono); font-size: 13px; }
+  .key-status { font-size: 12.5px; }
+  .status-ok { color: var(--ok); }
+  .status-bad { color: var(--err); }
+
+  /* Takes */
+  .empty { border: 1px dashed var(--line-strong); border-radius: 12px; padding: 26px 16px; text-align: center; color: var(--muted); font-size: 13.5px; }
+  .bars { display: flex; justify-content: center; align-items: center; gap: 3px; height: 30px; margin-bottom: 10px; }
+  .bars span { width: 3px; border-radius: 2px; background: var(--wave); }
+  .take { border-top: 1px solid var(--line); padding: 14px 0 4px; }
+  .take:first-child { border-top: 0; padding-top: 0; }
+  .take-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13.5px; }
+  .clip { background: var(--sunken); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; }
+  .clip-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13px; margin-bottom: 6px; }
+  .clip-model { font-weight: 650; }
+  .clip-voice { color: var(--muted); font-family: var(--mono); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .clip-status { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; padding: 4px 0; }
+  .clip-status.error { display: block; color: var(--err); }
+  .clip-status.error .hint { color: var(--muted); }
+  .spinner { width: 14px; height: 14px; flex: none; border: 2px solid var(--line-strong); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+  canvas.wave { display: block; width: 100%; height: 44px; cursor: pointer; }
+  audio { display: block; width: 100%; height: 36px; margin-top: 6px; }
+  .clip-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .clip-meta a { margin-left: auto; font-weight: 650; }
+
+  /* Under the hood */
+  #hood > summary h2 { display: inline; }
+  .hood-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .hood-bar .grow { flex: 1; min-width: 0; font-size: 13px; }
+  pre { background: var(--sunken); border: 1px solid var(--line); border-radius: 10px; padding: 12px; font: 12px/1.55 var(--mono); overflow: auto; max-height: 380px; margin: 10px 0 0; white-space: pre; }
+  .log-entry { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-top: 8px; }
+  .log-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+  .log-entry pre { max-height: 200px; margin-top: 8px; }
+  .http-ok { color: var(--ok); font-weight: 650; }
+  .http-bad { color: var(--err); font-weight: 650; }
+
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+
+  .toast { position: fixed; left: 50%; bottom: 24px; z-index: 50; max-width: calc(100vw - 32px); transform: translate(-50%, 16px); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 13.5px; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 960px) {
+    .layout { display: flex; flex-direction: column; }
+    .col { display: contents; }
+    #conn { order: 1; }
+    #model-card { order: 2; }
+    #compose-card { order: 3; }
+    #out { order: 4; }
+    #hood { order: 5; }
+  }
+  @media (max-width: 640px) {
+    .shell { padding: 18px 16px 40px; }
+    header { margin: 22px 0 20px; }
+    .card { padding: 16px; border-radius: 14px; }
+    .grid2 { grid-template-columns: minmax(0, 1fr); }
+    .adv-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .tabs button { font-size: 13px; padding: 8px 4px; }
+    .speaker { grid-template-columns: 12px minmax(0, 1fr) auto; grid-auto-flow: dense; }
+    .speaker .voice-cell { grid-column: 2 / -1; }
+    .cmp-row { grid-template-columns: 20px minmax(0, 1fr) auto; grid-auto-flow: dense; }
+    .cmp-row .voice-cell { grid-column: 2 / -1; }
+    kbd { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="top">
+    <div class="brand"><span class="onair" aria-hidden="true"></span>TTS PLAYGROUND</div>
+    <span class="badge" id="model-count">Loading models…</span>
+  </div>
+
+  <header>
+    <h1>OpenRouter TTS Playground</h1>
+    <p class="lede">Try the text-to-speech models on OpenRouter from one page. Narrate a script, stage a multi-voice conversation, or compare models side by side. You bring your own OpenRouter key.</p>
+  </header>
+
+  <main class="layout">
+    <div class="col">
+      <section class="card" id="model-card" aria-labelledby="model-h">
+        <div class="section-head">
+          <h2 id="model-h">Model</h2>
+          <a id="model-link" class="small" href="https://openrouter.ai/models?output_modalities=speech" target="_blank" rel="noopener">View on OpenRouter ↗</a>
+        </div>
+        <label for="model" class="label">Speech model</label>
+        <select id="model" disabled><option>Loading models…</option></select>
+        <div id="model-info"></div>
+      </section>
+
+      <section class="card" id="compose-card" aria-labelledby="compose-h">
+        <div class="section-head">
+          <h2 id="compose-h">Compose</h2>
+          <div class="row">
+            <button type="button" class="ghost small" id="load-example">Load example</button>
+            <button type="button" class="ghost small" id="share">Copy share link</button>
+            <button type="button" class="ghost small" id="reset">Reset</button>
+          </div>
+        </div>
+
+        <div class="tabs" role="group" aria-label="Mode">
+          <button type="button" data-mode="single" aria-pressed="true">Single voice</button>
+          <button type="button" data-mode="conversation" aria-pressed="false">Conversation</button>
+          <button type="button" data-mode="compare" aria-pressed="false">Compare models</button>
+        </div>
+
+        <!-- Single voice -->
+        <div data-panel="single">
+          <div class="field">
+            <span class="label" id="single-voice-label">Voice</span>
+            <div id="single-voice"></div>
+            <p class="hint" id="voice-hint"></p>
+          </div>
+          <div class="field">
+            <label for="instructions">Style instructions <span class="opt">optional</span></label>
+            <input id="instructions" type="text" placeholder="e.g. warm and unhurried, like a late-night radio host">
+            <p class="hint" id="instr-hint"></p>
+          </div>
+          <div class="field">
+            <label for="text">Text</label>
+            <textarea id="text" rows="6"></textarea>
+            <p class="hint" id="text-count"></p>
+          </div>
+          <div class="field" id="ref-field" hidden>
+            <span class="label">Reference clip <span class="opt">voice cloning, optional</span></span>
+            <div class="ref-box">
+              <div id="ref-empty">
+                <input type="file" id="ref-file" accept="audio/*" aria-label="Reference audio clip">
+                <p class="hint">A short, clean recording of the voice to copy (WAV or MP3, 15 MB max). It is sent with each request and not stored.</p>
+              </div>
+              <div id="ref-loaded" hidden>
+                <div class="row"><strong id="ref-name" class="small"></strong><span class="muted small" id="ref-size"></span><button type="button" class="ghost small" id="ref-clear">Remove</button></div>
+                <audio id="ref-audio" controls preload="metadata"></audio>
+              </div>
+              <label for="ref-transcript" style="margin-top:10px">Transcript of the clip <span class="opt">optional, helps Fish Audio</span></label>
+              <input id="ref-transcript" type="text" placeholder="What is said in the reference clip">
+            </div>
+          </div>
+        </div>
+
+        <!-- Conversation -->
+        <div data-panel="conversation" hidden>
+          <h3 style="margin-top:0">Cast</h3>
+          <div id="cast"></div>
+          <button type="button" class="small add-row" id="add-speaker">+ Add speaker</button>
+
+          <h3>Script</h3>
+          <div class="field" style="margin-bottom:6px">
+            <label for="conv-instr">Overall direction <span class="opt">optional, used for lines with no delivery set</span></label>
+            <input id="conv-instr" type="text" placeholder="e.g. a fast-paced, playful podcast">
+          </div>
+          <p class="hint" id="delivery-hint"></p>
+          <div id="lines"></div>
+          <button type="button" class="small add-row" id="add-line">+ Add line</button>
+
+          <label class="check"><input type="checkbox" id="stitch"> Generate each line separately and join them in the browser</label>
+          <p class="hint" id="stitch-hint"></p>
+        </div>
+
+        <!-- Compare -->
+        <div data-panel="compare" hidden>
+          <p class="hint" style="margin-top:0">Send the same text to several models at once. Each row picks its own model and voice, and all rows run in parallel.</p>
+          <div id="compare-rows"></div>
+          <button type="button" class="small add-row" id="add-compare">+ Add model</button>
+          <div class="field" style="margin-top:18px">
+            <label for="cmp-instructions">Style instructions <span class="opt">optional, only some models use them</span></label>
+            <input id="cmp-instructions" type="text" placeholder="e.g. warm and unhurried, like a late-night radio host">
+          </div>
+          <div class="field">
+            <label for="cmp-text">Text</label>
+            <textarea id="cmp-text" rows="5"></textarea>
+            <p class="hint" id="cmp-count"></p>
+          </div>
+        </div>
+
+        <details class="advanced">
+          <summary>Advanced options</summary>
+          <div class="adv-grid">
+            <div>
+              <label for="format">Audio format</label>
+              <select id="format">
+                <option value="mp3">MP3</option>
+                <option value="pcm">PCM (saved as WAV)</option>
+              </select>
+            </div>
+            <div>
+              <label for="speed">Speed</label>
+              <input id="speed" type="number" min="0.25" max="4" step="0.05" value="1">
+            </div>
+            <div>
+              <label for="gap">Pause between lines (ms)</label>
+              <input id="gap" type="number" min="0" max="5000" step="50" value="300">
+            </div>
+          </div>
+          <p class="hint">Speed is only sent when it isn't 1. Few models support it, and some reject other values with an error. The pause applies only when lines are joined in the browser.</p>
+          <label class="check"><input type="checkbox" id="zdr"> Only route to Zero Data Retention endpoints</label>
+          <label class="check"><input type="checkbox" id="autoplay" checked> Play new takes automatically</label>
+          <div class="field" style="margin-top:14px;margin-bottom:0">
+            <label for="provider-options">Provider options <span class="opt">JSON, sent as <code>provider.options</code></span></label>
+            <textarea id="provider-options" rows="3" spellcheck="false" style="font-family:var(--mono);font-size:12.5px;min-height:70px" placeholder='{"google-ai-studio": {"temperature": 0.7}}'></textarea>
+            <p class="hint" id="po-hint">Keyed by provider slug. Only the matching provider's options are forwarded.</p>
+          </div>
+        </details>
+
+        <div class="generate">
+          <button type="button" class="primary" id="go"><span id="go-label">Generate</span> <kbd id="go-kbd">⌘ ↵</kbd></button>
+          <button type="button" id="stop" hidden>Stop</button>
+        </div>
+        <p class="hint" id="estimate"></p>
+        <p class="form-error" id="form-error" role="alert" hidden></p>
+      </section>
+
+      <details class="card" id="hood">
+        <summary><h2>Under the hood</h2></summary>
+        <div class="hood-bar">
+          <span class="grow"><code>POST https://openrouter.ai/api/v1/audio/speech</code> <span class="muted" id="req-count"></span></span>
+          <button type="button" class="small" id="copy-json">Copy JSON</button>
+          <button type="button" class="small" id="copy-curl">Copy cURL</button>
+        </div>
+        <pre id="req-json" aria-label="Request body preview"></pre>
+        <h3>Last responses</h3>
+        <div id="resp-log"><p class="hint">Nothing sent yet.</p></div>
+      </details>
+    </div>
+
+    <div class="col">
+      <section class="card" id="conn" aria-labelledby="conn-h">
+        <div class="section-head">
+          <h2 id="conn-h">Connection</h2>
+          <span class="pill">Direct API</span>
+        </div>
+        <label for="key">OpenRouter API key</label>
+        <div class="key-row">
+          <input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-…">
+          <button type="button" id="toggle-key">Show</button>
+        </div>
+        <label class="check"><input type="checkbox" id="remember"> Remember on this device</label>
+        <div class="row" style="margin-top:10px">
+          <button type="button" class="small" id="check-key">Check key</button>
+          <span class="key-status" id="key-status" role="status"></span>
+        </div>
+        <p class="hint" style="margin-top:12px">Your browser sends requests straight to openrouter.ai. The key stays in this page's memory and is saved only if you tick Remember. Usage is billed to your OpenRouter account. <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">Get a key ↗</a></p>
+      </section>
+
+      <section class="card" id="out" aria-labelledby="out-h">
+        <div class="section-head">
+          <h2 id="out-h">Takes</h2>
+          <button type="button" class="ghost small" id="clear-takes" hidden>Clear all</button>
+        </div>
+        <div id="takes" aria-live="polite"></div>
+        <div class="empty" id="takes-empty">
+          <div class="bars" aria-hidden="true"><span style="height:30%"></span><span style="height:60%"></span><span style="height:90%"></span><span style="height:50%"></span><span style="height:75%"></span><span style="height:35%"></span><span style="height:65%"></span><span style="height:45%"></span><span style="height:20%"></span></div>
+          Generated audio shows up here. Each take keeps the settings that made it, so you can reuse them.
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    Uses OpenRouter's <a href="https://openrouter.ai/docs/guides/overview/multimodal/tts" target="_blank" rel="noopener">text-to-speech endpoint</a> and the live <a href="https://openrouter.ai/models?output_modalities=speech" target="_blank" rel="noopener">speech model list</a>.
+    Inspired by Simon Willison's <a href="https://simonwillison.net/2026/Sep/23/gemini-tts-playground/" target="_blank" rel="noopener">Gemini TTS Playground</a>.
+  </footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<noscript><p style="text-align:center">This playground needs JavaScript.</p></noscript>
+
+<script>
+(() => {
+  'use strict';
+
+  const API = 'https://openrouter.ai/api/v1';
+  const DEFAULT_MODEL = 'google/gemini-3.8-flash-tts';
+  const COMPARE_PICKS = ['elevenlabs/eleven-v4', 'minimax/speech-2.8-hd', 'microsoft/mai-voice-2.1', 'hexgrad/kokoro-82m', 'x-ai/grok-voice-tts-1.0', 'deepgram/aura-2'];
+  const KEY_STORAGE = 'openrouter-tts-playground.key';
+  const SPEAKER_COLORS = ['#c2410c', '#2563eb', '#059669', '#9333ea', '#ca8a04', '#db2777'];
+  const MAX_REF_BYTES = 15 * 1024 * 1024;
+
+  // ---------- small helpers ----------
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+  const uid = () => Math.random().toString(36).slice(2, 10);
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const asStr = (v, fallback) => (typeof v === 'string' ? v : fallback);
+  const pad = n => String(n).padStart(2, '0');
+
+  function h(tag, props, ...kids) {
+    const el = document.createElement(tag);
+    let value;
+    for (const [k, v] of Object.entries(props || {})) {
+      if (v == null || v === false) continue;
+      if (k === 'value') value = v;
+      else if (k === 'checked') el.checked = !!v;
+      else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? '' : String(v));
+    }
+    for (const kid of kids.flat(Infinity)) {
+      if (kid == null || kid === false) continue;
+      el.append(kid instanceof Node ? kid : String(kid));
+    }
+    if (value !== undefined) el.value = value;
+    return el;
+  }
+
+  function money(x) {
+    if (!x) return '$0';
+    return '$' + String(+x.toPrecision(3));
+  }
+  function fmtCost(x) {
+    if (x == null) return '';
+    if (x === 0) return '$0';
+    if (x < 0.0001) return '<$0.0001';
+    if (x < 0.01) return '$' + x.toFixed(4);
+    if (x < 1) return '$' + x.toFixed(3);
+    return '$' + x.toFixed(2);
+  }
+  function fmtBytes(n) {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+    return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  }
+  function fmtDur(s) {
+    if (!isFinite(s)) return '';
+    if (s < 60) return `${s.toFixed(1)} s`;
+    return `${Math.floor(s / 60)}:${pad(Math.round(s % 60))}`;
+  }
+  function b64urlEncode(str) {
+    const bytes = new TextEncoder().encode(str);
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function b64urlDecode(str) {
+    let s = str.replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    const bin = atob(s);
+    return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+  }
+  function debounce(fn, ms) {
+    let t;
+    return () => { clearTimeout(t); t = setTimeout(fn, ms); };
+  }
+  let toastTimer;
+  function toast(msg) {
+    const el = $('#toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+  }
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      const ta = h('textarea', { style: 'position:fixed;opacity:0' });
+      ta.value = text;
+      document.body.append(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      return ok;
+    }
+  }
+
+  // ---------- models ----------
+  let models = [];
+  const modelById = new Map();
+  const endpointCaps = new Map();
+
+  const providerOf = id => id.split('/')[0];
+  const voicesOf = id => modelById.get(id)?.voices || [];
+  function shortName(m) {
+    const i = m.name.indexOf(': ');
+    return i > 0 ? m.name.slice(i + 2) : m.name;
+  }
+  function groupName(m) {
+    const i = m.name.indexOf(': ');
+    return i > 0 ? m.name.slice(0, i) : providerOf(m.id);
+  }
+  function modelLabel(id) {
+    const m = modelById.get(id);
+    return m ? shortName(m) : id;
+  }
+
+  // What each model family does with the optional request fields, per OpenRouter's TTS docs.
+  function caps(id) {
+    const p = providerOf(id);
+    const tagged = p === 'elevenlabs' && /eleven-v[34]/.test(id);
+    return {
+      instructions: p === 'google' || p === 'fish-audio' || p === 'openai',
+      multiSpeaker: p === 'google' || (p === 'fish-audio' && !/\/s1$/.test(id)),
+      bracketDelivery: tagged,
+      prompt: p === 'bytedance-seed',
+      cloning: endpointCaps.get(id)?.cloning === true,
+    };
+  }
+
+  function priceShort(m) {
+    const p = +m.pricing?.prompt || 0;
+    const c = +m.pricing?.completion || 0;
+    if (!p && !c) return 'free';
+    if (p && !c) return `${money(p * 1e6)}/M chars`;
+    if (!p && c) return `${money(c)}/sec of audio`;
+    return `${money(p * 1e6)} in · ${money(c * 1e6)} out per M tokens`;
+  }
+
+  function voiceParts(v) {
+    const mai = v.match(/^([a-z]{2,3}-[A-Z]{2})-(.+?):MAI-Voice/);
+    if (mai) return { name: mai[2], detail: mai[1] };
+    return { name: v, detail: '' };
+  }
+  const voiceLabel = v => {
+    const { name, detail } = voiceParts(v);
+    return detail ? `${name} · ${detail}` : name;
+  };
+
+  function tipsFor(id) {
+    const p = providerOf(id);
+    const c = caps(id);
+    const tips = [];
+    if (p === 'google') {
+      tips.push('Reads the text word for word. Put delivery directions in Style instructions, or they may be spoken aloud.');
+      tips.push('Handles conversations natively, as one request.');
+    }
+    if (p === 'fish-audio') {
+      tips.push('Write directions in [square brackets] inside the text, for example "[whispering] Nobody answered." Style instructions are added the same way.');
+      tips.push('There is no preset voice list. Leave Voice blank for the default, paste a Fish Audio voice ID, or attach a reference clip.');
+    }
+    if (c.bracketDelivery) tips.push('Supports inline audio tags such as [whispers], [laughs] or [excited]. Style instructions are ignored.');
+    if (p === 'bytedance-seed') tips.push('The text is a prompt, not a script. Describe the voice and delivery, or even sound effects, and leave Voice blank. Billed per second of audio, up to 120 seconds.');
+    if (p === 'microsoft') tips.push("The voice's locale sets the language.");
+    if (p === 'minimax') tips.push('Accepts any MiniMax voice ID, not only the presets listed.');
+    if (p === 'heygen') tips.push('Attach a reference clip to clone a voice. HeyGen then ignores Voice.');
+    if (!c.instructions && !c.bracketDelivery && !c.prompt) tips.push('This model ignores style instructions.');
+    return tips;
+  }
+
+  // Voices to pick defaults from: US English for locale-prefixed catalogs, neutral takes for emotion-suffixed ones.
+  function defaultVoices(id) {
+    const vs = voicesOf(id);
+    const preferred = vs.filter(v => /^en-US-|_neutral$/.test(v));
+    return preferred.length ? [...preferred, ...vs.filter(v => !preferred.includes(v))] : vs;
+  }
+  function fitVoice(id, current, index = 0) {
+    const vs = defaultVoices(id);
+    if (!vs.length) return '';
+    if (vs.includes(current)) return current;
+    return vs[index % vs.length];
+  }
+  function fitCastVoices() {
+    const vs = defaultVoices(state.model);
+    const used = new Set();
+    state.cast.forEach((sp, i) => {
+      if (!vs.length) { sp.voice = ''; return; }
+      if (vs.includes(sp.voice) && !used.has(sp.voice)) { used.add(sp.voice); return; }
+      sp.voice = vs.find((v, j) => j >= i % vs.length && !used.has(v)) || vs.find(v => !used.has(v)) || vs[i % vs.length];
+      used.add(sp.voice);
+    });
+  }
+
+  async function loadModels() {
+    const res = await fetch(`${API}/models?output_modalities=speech`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    models = (json.data || [])
+      .map(m => ({ ...m, voices: Array.isArray(m.supported_voices) ? m.supported_voices : [] }))
+      .sort((a, b) => groupName(a).localeCompare(groupName(b)) || (b.created || 0) - (a.created || 0));
+    modelById.clear();
+    for (const m of models) modelById.set(m.id, m);
+    if (!models.length) throw new Error('OpenRouter returned no speech models.');
+  }
+
+  function loadEndpointCaps(id) {
+    if (endpointCaps.has(id)) return;
+    endpointCaps.set(id, { loading: true });
+    fetch(`${API}/models/${id}/endpoints`)
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error(r.status))))
+      .then(j => {
+        const eps = j.data?.endpoints || [];
+        endpointCaps.set(id, { cloning: eps.some(e => e.supports_voice_cloning) });
+      })
+      .catch(() => endpointCaps.set(id, { cloning: false }))
+      .finally(() => {
+        if (state.model === id) { renderModelInfo(); renderReference(); refresh(); }
+      });
+  }
+
+  function fillModelSelect(sel, value) {
+    sel.replaceChildren();
+    const groups = new Map();
+    for (const m of models) {
+      const g = groupName(m);
+      if (!groups.has(g)) groups.set(g, []);
+      groups.get(g).push(m);
+    }
+    for (const [g, ms] of groups) {
+      sel.append(h('optgroup', { label: g }, ms.map(m => h('option', { value: m.id }, `${shortName(m)} · ${priceShort(m)}`))));
+    }
+    sel.disabled = false;
+    sel.value = value;
+  }
+
+  // ---------- state ----------
+  function defaults() {
+    return {
+      mode: 'single',
+      model: DEFAULT_MODEL,
+      voice: '',
+      text: 'Welcome to the playground! Pick a model, choose a voice and type whatever you like. Then press Generate to hear how it sounds.',
+      instructions: '',
+      cast: [{ id: uid(), name: 'Maya', voice: '' }, { id: uid(), name: 'Theo', voice: '' }],
+      lines: [],
+      convInstructions: '',
+      stitch: false,
+      compare: [],
+      format: 'mp3',
+      speed: 1,
+      gapMs: 300,
+      zdr: false,
+      autoplay: true,
+      providerOptions: '',
+    };
+  }
+  let state = defaults();
+  let reference = null; // { name, size, dataUrl } – kept out of the URL and snapshots
+
+  function exampleLines() {
+    const [a, b = a] = state.cast;
+    return [
+      { id: uid(), speaker: a.id, delivery: 'conspiratorial, barely holding back a laugh', text: "Okay, you can't tell anyone. The office coffee machine has been on decaf for three weeks." },
+      { id: uid(), speaker: b.id, delivery: 'horrified disbelief', text: 'Three weeks? That explains everything. I thought I was just getting old.' },
+      { id: uid(), speaker: a.id, delivery: 'deadpan', text: 'Facilities says it was a supply chain decision.' },
+      { id: uid(), speaker: b.id, delivery: 'slow, dramatic whisper', text: 'Then we riot at dawn.' },
+    ];
+  }
+
+  function sampleFor(id) {
+    const p = providerOf(id);
+    const c = caps(id);
+    const narration = 'Good evening, and welcome to the late show. Tonight we meet a lighthouse keeper who swears the fog talks back, and a chef who cooked dinner for a hundred people over a single campfire.';
+    if (p === 'bytedance-seed') return { text: 'An old sailor with a gravelly voice tells a story beside a crackling fire, with waves crashing in the distance: "I have seen the sea glow green at midnight, lad, and I never want to see it again."', instructions: '' };
+    if (p === 'fish-audio') return { text: '[nervous, speaking quickly] I did not touch the production server. [long pause] [sheepish] Okay. I touched the production server.', instructions: '' };
+    if (c.bracketDelivery) return { text: "[excited] We finally shipped it! [whispers] Don't tell anyone, but half of it is held together with tape. [laughs] It works, though.", instructions: '' };
+    if (c.instructions) return { text: narration, instructions: 'Warm and unhurried, like a late-night radio host leaning into the microphone.' };
+    return { text: narration, instructions: '' };
+  }
+
+  function encodeState() {
+    const s = state;
+    const castIndex = new Map(s.cast.map((c, i) => [c.id, i]));
+    return b64urlEncode(JSON.stringify({
+      m: s.mode, mo: s.model, v: s.voice, t: s.text, i: s.instructions,
+      c: s.cast.map(c => [c.name, c.voice]),
+      l: s.lines.map(l => [castIndex.get(l.speaker) ?? 0, l.delivery, l.text]),
+      ci: s.convInstructions, st: s.stitch ? 1 : 0,
+      cm: s.compare.map(r => [r.model, r.voice]),
+      f: s.format, sp: s.speed, g: s.gapMs, z: s.zdr ? 1 : 0, ap: s.autoplay ? 1 : 0, po: s.providerOptions,
+    }));
+  }
+  function decodeState(str) {
+    const o = JSON.parse(b64urlDecode(str));
+    const d = defaults();
+    const cast = Array.isArray(o.c) && o.c.length
+      ? o.c.map(([name, voice]) => ({ id: uid(), name: asStr(name, ''), voice: asStr(voice, '') }))
+      : d.cast;
+    return {
+      mode: ['single', 'conversation', 'compare'].includes(o.m) ? o.m : 'single',
+      model: asStr(o.mo, d.model),
+      voice: asStr(o.v, ''),
+      text: asStr(o.t, d.text),
+      instructions: asStr(o.i, ''),
+      cast,
+      lines: Array.isArray(o.l) ? o.l.map(([si, dl, tx]) => ({ id: uid(), speaker: (cast[si] || cast[0]).id, delivery: asStr(dl, ''), text: asStr(tx, '') })) : [],
+      convInstructions: asStr(o.ci, ''),
+      stitch: !!o.st,
+      compare: Array.isArray(o.cm) ? o.cm.map(([m, v]) => ({ id: uid(), model: asStr(m, d.model), voice: asStr(v, '') })) : [],
+      format: o.f === 'pcm' ? 'pcm' : 'mp3',
+      speed: +o.sp > 0 ? +o.sp : 1,
+      gapMs: Number.isFinite(+o.g) && +o.g >= 0 ? +o.g : 300,
+      zdr: !!o.z,
+      autoplay: o.ap !== 0,
+      providerOptions: asStr(o.po, ''),
+    };
+  }
+  function readHash() {
+    const m = location.hash.match(/^#s=([\w-]+)/);
+    if (!m) return null;
+    try { return decodeState(m[1]); } catch { return null; }
+  }
+  function writeHash() {
+    const url = `${location.pathname}${location.search}#s=${encodeState()}`;
+    try { history.replaceState(null, '', url); } catch { /* some file:// setups refuse; sharing still works via the button */ }
+  }
+  const scheduleHash = debounce(writeHash, 400);
+
+  // ---------- request building ----------
+  function parseProviderOptions() {
+    const t = state.providerOptions.trim();
+    if (!t) return { value: undefined };
+    try {
+      const v = JSON.parse(t);
+      if (!v || typeof v !== 'object' || Array.isArray(v)) return { error: 'Provider options must be a JSON object, for example {"google-ai-studio": {"temperature": 0.7}}.' };
+      return { value: v };
+    } catch (e) {
+      return { error: `Provider options are not valid JSON: ${e.message}` };
+    }
+  }
+
+  function bodyFor({ model, input, voice, instructions, refs }) {
+    const body = { model, input };
+    if (voice && !refs) body.voice = voice;
+    if (instructions) body.instructions = instructions;
+    body.response_format = state.format;
+    const speed = +state.speed;
+    if (speed > 0 && speed !== 1) body.speed = speed;
+    const provider = {};
+    if (state.zdr) provider.zdr = true;
+    const po = parseProviderOptions().value;
+    if (po) provider.options = po;
+    if (Object.keys(provider).length) body.provider = provider;
+    if (refs) body.input_references = refs;
+    return body;
+  }
+
+  function referenceParts() {
+    const parts = [{ type: 'input_audio', input_audio: { data: reference.dataUrl } }];
+    const transcript = $('#ref-transcript').value.trim();
+    if (transcript) parts.push({ type: 'text', text: transcript });
+    return parts;
+  }
+
+  // A plan is one take: a list of clips, each made of one or more requests.
+  function buildPlan() {
+    const s = state;
+    const gap = Math.max(0, +s.gapMs || 0) / 1000;
+    if (s.mode === 'single') {
+      const refs = reference && caps(s.model).cloning ? referenceParts() : null;
+      return {
+        kind: 'Single voice', gap,
+        clips: [{ model: s.model, voice: refs ? 'reference clip' : s.voice.trim(), requests: [bodyFor({ model: s.model, input: s.text, voice: s.voice.trim(), instructions: s.instructions.trim(), refs })] }],
+      };
+    }
+    if (s.mode === 'conversation') {
+      const castById = new Map(s.cast.map(c => [c.id, c]));
+      const lines = s.lines.filter(l => l.text.trim());
+      const c = caps(s.model);
+      const stitched = s.stitch || !c.multiSpeaker;
+      const castLabel = s.cast.map(sp => sp.name.trim() || 'Unnamed').join(' & ');
+      const overall = s.convInstructions.trim();
+      if (!stitched) {
+        const input = lines.map(l => {
+          const turn = { text: l.text.trim() };
+          const v = castById.get(l.speaker)?.voice.trim();
+          if (v) turn.voice = v;
+          if (l.delivery.trim()) turn.instructions = l.delivery.trim();
+          return turn;
+        });
+        return {
+          kind: 'Conversation', gap,
+          clips: [{ model: s.model, voice: castLabel, requests: [bodyFor({ model: s.model, input, voice: s.cast[0]?.voice.trim(), instructions: overall })] }],
+        };
+      }
+      const requests = lines.map(l => {
+        let text = l.text.trim();
+        let instructions = l.delivery.trim() || overall;
+        if (c.bracketDelivery && l.delivery.trim()) {
+          text = `[${l.delivery.trim()}] ${text}`;
+          instructions = overall;
+        }
+        return bodyFor({ model: s.model, input: text, voice: castById.get(l.speaker)?.voice.trim(), instructions });
+      });
+      return { kind: 'Conversation, joined in browser', gap, stitched: true, clips: [{ model: s.model, voice: castLabel, stitch: true, requests }] };
+    }
+    return {
+      kind: 'Comparison', gap, parallel: true,
+      clips: s.compare.map(r => ({ model: r.model, voice: r.voice.trim(), requests: [bodyFor({ model: r.model, input: s.text, voice: r.voice.trim(), instructions: s.instructions.trim() })] })),
+    };
+  }
+
+  function validate() {
+    const s = state;
+    if (!models.length) return 'The model list has not loaded yet.';
+    if (s.mode !== 'conversation' && !s.text.trim()) return 'Type some text to speak.';
+    if (s.mode === 'conversation' && !s.lines.some(l => l.text.trim())) return 'Add at least one line with text.';
+    if (s.mode === 'compare' && !s.compare.length) return 'Add at least one model to compare.';
+    const po = parseProviderOptions();
+    if (po.error) return po.error;
+    return null;
+  }
+
+  function requestChars(body) {
+    if (typeof body.input === 'string') return body.input.length;
+    return body.input.reduce((n, t) => n + (t.text || '').length, 0);
+  }
+
+  // ---------- audio helpers ----------
+  function writeWavHeader(view, dataLen, rate, channels, bits = 16) {
+    const w = (o, str) => { for (let i = 0; i < str.length; i++) view.setUint8(o + i, str.charCodeAt(i)); };
+    w(0, 'RIFF');
+    view.setUint32(4, 36 + dataLen, true);
+    w(8, 'WAVE');
+    w(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, channels, true);
+    view.setUint32(24, rate, true);
+    view.setUint32(28, rate * channels * bits / 8, true);
+    view.setUint16(32, channels * bits / 8, true);
+    view.setUint16(34, bits, true);
+    w(36, 'data');
+    view.setUint32(40, dataLen, true);
+  }
+  function pcmToWavBlob(bytes, rate, channels) {
+    const len = bytes.byteLength - (bytes.byteLength % (2 * channels));
+    const head = new DataView(new ArrayBuffer(44));
+    writeWavHeader(head, len, rate, channels);
+    return new Blob([head, new Uint8Array(bytes, 0, len)], { type: 'audio/wav' });
+  }
+  function pcmToAudioBuffer(bytes, rate, channels) {
+    const frames = Math.max(1, Math.floor(bytes.byteLength / (2 * channels)));
+    const view = new DataView(bytes);
+    const buf = new AudioBuffer({ length: frames, numberOfChannels: channels, sampleRate: rate });
+    for (let c = 0; c < channels; c++) {
+      const d = buf.getChannelData(c);
+      for (let i = 0; i < frames && (i * channels + c) * 2 + 1 < bytes.byteLength; i++) d[i] = view.getInt16((i * channels + c) * 2, true) / 32768;
+    }
+    return buf;
+  }
+  function audioBufferToWavBlob(buf) {
+    const ch = buf.numberOfChannels;
+    const len = buf.length;
+    const mono = new Float32Array(len);
+    for (let c = 0; c < ch; c++) {
+      const d = buf.getChannelData(c);
+      for (let i = 0; i < len; i++) mono[i] += d[i] / ch;
+    }
+    const view = new DataView(new ArrayBuffer(44 + len * 2));
+    writeWavHeader(view, len * 2, buf.sampleRate, 1);
+    for (let i = 0; i < len; i++) {
+      const v = Math.max(-1, Math.min(1, mono[i]));
+      view.setInt16(44 + i * 2, v < 0 ? v * 0x8000 : v * 0x7fff, true);
+    }
+    return new Blob([view], { type: 'audio/wav' });
+  }
+
+  // Work out what the bytes are. Headers are a hint; the bytes themselves are the truth.
+  function identify(bytes, contentType, requested) {
+    const ct = (contentType || '').toLowerCase();
+    const u = new Uint8Array(bytes, 0, Math.min(4, bytes.byteLength));
+    const magic = String.fromCharCode(...u);
+    if (magic === 'RIFF') return { kind: 'wav', mime: 'audio/wav', ext: 'wav' };
+    if (/mpeg|mp3/.test(ct)) return { kind: 'mp3', mime: 'audio/mpeg', ext: 'mp3' };
+    if (/ogg|opus/.test(ct)) return { kind: 'ogg', mime: 'audio/ogg', ext: 'ogg' };
+    if (/flac/.test(ct)) return { kind: 'flac', mime: 'audio/flac', ext: 'flac' };
+    if (/aac/.test(ct)) return { kind: 'aac', mime: 'audio/aac', ext: 'aac' };
+    if (/pcm|l16|raw/.test(ct) || requested === 'pcm') {
+      const rate = +(ct.match(/(?:sample_?rate|rate)=(\d+)/) || [])[1] || 24000;
+      const channels = +(ct.match(/channels=(\d+)/) || [])[1] || 1;
+      return { kind: 'pcm', mime: 'audio/wav', ext: 'wav', rate, channels, rateGuessed: !/rate=/.test(ct) };
+    }
+    if (magic.startsWith('ID3') || (u[0] === 0xff && (u[1] & 0xe0) === 0xe0)) return { kind: 'mp3', mime: 'audio/mpeg', ext: 'mp3' };
+    if (magic === 'OggS') return { kind: 'ogg', mime: 'audio/ogg', ext: 'ogg' };
+    if (magic === 'fLaC') return { kind: 'flac', mime: 'audio/flac', ext: 'flac' };
+    return { kind: 'unknown', mime: ct || 'audio/mpeg', ext: 'mp3' };
+  }
+
+  let decodeCtx;
+  function decodeAudio(r) {
+    if (r.kind === 'pcm') return Promise.resolve(pcmToAudioBuffer(r.bytes, r.rate, r.channels));
+    decodeCtx = decodeCtx || new OfflineAudioContext(1, 1, 44100);
+    return decodeCtx.decodeAudioData(r.bytes.slice(0));
+  }
+
+  async function stitch(buffers, gapSec) {
+    const rate = Math.max(...buffers.map(b => b.sampleRate));
+    const total = buffers.reduce((t, b) => t + b.duration, 0) + gapSec * (buffers.length - 1);
+    const ctx = new OfflineAudioContext(1, Math.max(1, Math.ceil(total * rate)), rate);
+    let t = 0;
+    for (const b of buffers) {
+      const src = ctx.createBufferSource();
+      src.buffer = b;
+      src.connect(ctx.destination);
+      src.start(t);
+      t += b.duration + gapSec;
+    }
+    return ctx.startRendering();
+  }
+
+  function computePeaks(buf, n = 800) {
+    const d = buf.getChannelData(0);
+    const count = Math.min(n, d.length);
+    const step = Math.max(1, Math.floor(d.length / count));
+    const peaks = new Float32Array(count);
+    let max = 0;
+    for (let i = 0; i < count; i++) {
+      let m = 0;
+      const end = Math.min(d.length, (i + 1) * step);
+      for (let j = i * step; j < end; j++) { const v = Math.abs(d[j]); if (v > m) m = v; }
+      peaks[i] = m;
+      if (m > max) max = m;
+    }
+    if (max > 0) for (let i = 0; i < count; i++) peaks[i] /= max;
+    return peaks;
+  }
+
+  const darkQuery = matchMedia('(prefers-color-scheme: dark)');
+  function attachWave(canvas, audio, peaks) {
+    let raf = 0;
+    const draw = () => {
+      const w = canvas.clientWidth;
+      const ht = canvas.clientHeight;
+      if (!w || !ht) return;
+      const dpr = window.devicePixelRatio || 1;
+      if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(ht * dpr)) {
+        canvas.width = Math.round(w * dpr);
+        canvas.height = Math.round(ht * dpr);
+      }
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, ht);
+      const cs = getComputedStyle(canvas);
+      const base = cs.getPropertyValue('--wave').trim() || '#ccc';
+      const played = cs.getPropertyValue('--wave-played').trim() || '#c2410c';
+      const step = 3;
+      const bars = Math.max(1, Math.floor(w / step));
+      const progress = audio.duration && isFinite(audio.duration) ? audio.currentTime / audio.duration : 0;
+      for (let i = 0; i < bars; i++) {
+        const a = Math.floor((i / bars) * peaks.length);
+        const b = Math.max(a + 1, Math.floor(((i + 1) / bars) * peaks.length));
+        let v = 0;
+        for (let j = a; j < b && j < peaks.length; j++) v = Math.max(v, peaks[j]);
+        const bh = Math.max(2, v * (ht - 4));
+        ctx.fillStyle = (i + 0.5) / bars <= progress ? played : base;
+        ctx.fillRect(i * step, (ht - bh) / 2, 2, bh);
+      }
+    };
+    const loop = () => { draw(); if (!audio.paused) raf = requestAnimationFrame(loop); };
+    audio.addEventListener('play', () => { cancelAnimationFrame(raf); loop(); });
+    ['pause', 'seeked', 'ended', 'loadedmetadata', 'timeupdate'].forEach(ev => audio.addEventListener(ev, draw));
+    canvas.addEventListener('click', e => {
+      if (!audio.duration || !isFinite(audio.duration)) return;
+      const r = canvas.getBoundingClientRect();
+      audio.currentTime = ((e.clientX - r.left) / r.width) * audio.duration;
+    });
+    if ('ResizeObserver' in window) new ResizeObserver(draw).observe(canvas);
+    darkQuery.addEventListener?.('change', draw);
+    draw();
+  }
+
+  // ---------- API calls ----------
+  let apiKey = '';
+  let current = null;
+  const runLog = [];
+
+  class ApiError extends Error {
+    constructor(status, message, body) {
+      super(message);
+      this.status = status;
+      this.body = body;
+    }
+  }
+
+  async function callSpeech(body, signal) {
+    const entry = { model: body.model, pending: true };
+    runLog.push(entry);
+    renderLog();
+    const t0 = performance.now();
+    let res;
+    try {
+      res = await fetch(`${API}/audio/speech`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal,
+      });
+    } catch (e) {
+      entry.pending = false;
+      entry.error = e.name === 'AbortError' ? 'Cancelled' : `Network error: ${e.message}`;
+      renderLog();
+      if (e.name === 'AbortError') throw e;
+      throw new Error(`Couldn't reach OpenRouter (${e.message}).`);
+    }
+    const header = n => res.headers.get(n) || '';
+    entry.status = res.status;
+    entry.headers = {
+      'content-type': header('content-type'),
+      'x-generation-id': header('x-generation-id'),
+      'x-provider-name': header('x-provider-name'),
+      'request-id': header('request-id'),
+    };
+    try {
+      if (!res.ok) {
+        const text = await res.text();
+        let message = text || `HTTP ${res.status}`;
+        let parsed = text;
+        try {
+          parsed = JSON.parse(text);
+          message = parsed.error?.message || message;
+          const raw = parsed.error?.metadata?.raw;
+          if (raw && typeof raw === 'string' && !message.includes(raw)) message += ` (${raw.slice(0, 300)})`;
+        } catch { /* body wasn't JSON */ }
+        entry.errorBody = parsed;
+        throw new ApiError(res.status, message, parsed);
+      }
+      const bytes = await res.arrayBuffer();
+      entry.ms = performance.now() - t0;
+      entry.size = bytes.byteLength;
+      const ct = header('content-type');
+      if (/json/i.test(ct)) {
+        const text = new TextDecoder().decode(bytes);
+        entry.errorBody = text;
+        let message = 'OpenRouter returned JSON instead of audio.';
+        try { message = JSON.parse(text).error?.message || message; } catch { /* keep default */ }
+        throw new ApiError(res.status, message, text);
+      }
+      if (!bytes.byteLength) throw new Error('The response contained no audio.');
+      entry.ok = true;
+      return {
+        bytes,
+        ...identify(bytes, ct, body.response_format),
+        genId: header('x-generation-id'),
+        provider: header('x-provider-name'),
+      };
+    } catch (e) {
+      entry.error = entry.error || e.message;
+      throw e;
+    } finally {
+      entry.pending = false;
+      entry.ms = entry.ms || performance.now() - t0;
+      renderLog();
+    }
+  }
+
+  async function fetchCost(genId) {
+    for (const wait of [800, 1500, 3000, 5000, 8000]) {
+      await sleep(wait);
+      try {
+        const r = await fetch(`${API}/generation?id=${encodeURIComponent(genId)}`, { headers: { Authorization: `Bearer ${apiKey}` } });
+        if (r.ok) {
+          const j = await r.json();
+          if (j.data && j.data.total_cost != null) return +j.data.total_cost;
+        } else if (r.status !== 404) {
+          return null;
+        }
+      } catch { /* retry */ }
+    }
+    return null;
+  }
+  async function sumCosts(results) {
+    const ids = results.map(r => r.genId).filter(Boolean);
+    if (!ids.length) return null;
+    const costs = await Promise.all(ids.map(fetchCost));
+    if (costs.some(c => c == null)) return null;
+    return costs.reduce((a, b) => a + b, 0);
+  }
+
+  async function mapLimit(items, limit, fn) {
+    const out = new Array(items.length);
+    let next = 0;
+    async function worker() {
+      while (next < items.length) {
+        const i = next++;
+        out[i] = await fn(items[i], i);
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+    return out;
+  }
+
+  function explain(e) {
+    if (e.name === 'AbortError') return { message: 'Cancelled.', hint: '' };
+    const hints = {
+      400: /voice/i.test(e.message) ? 'Try a voice from the list for this model.' : 'The model or provider rejected one of the settings. The request is under "Under the hood".',
+      401: 'Check your API key.',
+      402: 'Your OpenRouter account needs more credits.',
+      403: 'The request was refused, possibly by moderation or your key\'s limits.',
+      404: 'OpenRouter could not find this model or a provider that accepts this request.',
+      429: 'Rate limited. Wait a moment and try again.',
+    };
+    return { message: e.message, hint: hints[e.status] || (e.status >= 500 ? 'The provider had a problem. Try again or pick another model.' : '') };
+  }
+
+  // ---------- running a take ----------
+  let takeCount = 0;
+  const objectUrls = new Set();
+
+  async function run(plan, snapshot) {
+    hideFormError();
+    if (current) { toast('Wait for the current take to finish, or press Stop.'); return; }
+    if (!apiKey) {
+      showFormError('Add your OpenRouter API key in Connection first.');
+      $('#key').focus();
+      return;
+    }
+    const ac = new AbortController();
+    current = ac;
+    setBusy(true);
+    runLog.length = 0;
+    renderLog();
+    const uis = createTake(plan, snapshot);
+    try {
+      const results = await Promise.all(plan.clips.map((clip, i) => runClip(clip, uis[i], ac.signal, plan.gap)));
+      const ok = results.filter(Boolean);
+      if (state.autoplay && plan.clips.length === 1 && ok[0]) ok[0].play().catch(() => {});
+    } finally {
+      current = null;
+      setBusy(false);
+    }
+  }
+
+  async function runClip(clip, ui, signal, gap) {
+    const ac = new AbortController();
+    const onAbort = () => ac.abort();
+    signal.addEventListener('abort', onAbort);
+    const t0 = performance.now();
+    const n = clip.requests.length;
+    let done = 0;
+    if (n > 1) ui.progress(`Generating ${n} lines…`);
+    try {
+      const results = await mapLimit(clip.requests, 3, async body => {
+        const r = await callSpeech(body, ac.signal);
+        done++;
+        if (n > 1) ui.progress(`Generated ${done} of ${n} lines…`);
+        return r;
+      });
+      let blob;
+      let ext;
+      let buffer = null;
+      if (n === 1) {
+        const r = results[0];
+        if (r.kind === 'pcm') { blob = pcmToWavBlob(r.bytes, r.rate, r.channels); ext = 'wav'; }
+        else { blob = new Blob([r.bytes], { type: r.mime }); ext = r.ext; }
+        buffer = await decodeAudio(r).catch(() => null);
+      } else {
+        ui.progress('Joining lines…');
+        const buffers = await Promise.all(results.map(decodeAudio));
+        buffer = await stitch(buffers, gap);
+        blob = audioBufferToWavBlob(buffer);
+        ext = 'wav';
+      }
+      const audio = ui.done({ blob, ext, buffer, ms: performance.now() - t0, results, clip });
+      sumCosts(results).then(cost => ui.cost(cost));
+      return audio;
+    } catch (e) {
+      ac.abort();
+      ui.fail(e);
+      return null;
+    } finally {
+      signal.removeEventListener('abort', onAbort);
+    }
+  }
+
+  function fileName(clip, ext) {
+    const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+    const d = new Date();
+    const ts = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    return [slug(clip.model.split('/')[1]), slug(clip.voice), ts].filter(Boolean).join('_') + '.' + ext;
+  }
+
+  function createTake(plan, snapshot) {
+    takeCount++;
+    const d = new Date();
+    const el = h('article', { class: 'take' },
+      h('div', { class: 'take-head' },
+        h('div', {}, h('strong', {}, `Take ${takeCount}`), h('span', { class: 'muted' }, ` · ${plan.kind}`)),
+        h('div', { class: 'row' },
+          h('time', { class: 'muted small', datetime: d.toISOString() }, `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`),
+          snapshot && h('button', { type: 'button', class: 'ghost small', title: 'Load the settings that made this take', onclick: () => restore(snapshot, el) }, 'Reuse settings'))));
+    const uis = plan.clips.map(clip => {
+      const ui = clipUi(clip);
+      el.append(ui.el);
+      return ui;
+    });
+    $('#takes').prepend(el);
+    $('#takes-empty').hidden = true;
+    $('#clear-takes').hidden = false;
+    return uis;
+  }
+
+  function clipUi(clip) {
+    const statusText = h('span', {}, 'Generating…');
+    const status = h('div', { class: 'clip-status' }, h('span', { class: 'spinner', 'aria-hidden': 'true' }), statusText);
+    const body = h('div', {});
+    const el = h('div', { class: 'clip' },
+      h('div', { class: 'clip-head' },
+        h('span', { class: 'clip-model' }, modelLabel(clip.model)),
+        h('span', { class: 'clip-voice', title: clip.voice }, clip.voice ? voiceLabel(clip.voice) : 'default voice')),
+      status, body);
+    let costEl;
+    return {
+      el,
+      progress(text) { statusText.textContent = text; },
+      fail(e) {
+        const { message, hint } = explain(e);
+        status.className = 'clip-status error';
+        status.replaceChildren(h('div', {}, message), hint && h('div', { class: 'hint' }, hint));
+      },
+      done({ blob, ext, buffer, ms, results }) {
+        status.remove();
+        const url = URL.createObjectURL(blob);
+        objectUrls.add(url);
+        const audio = h('audio', { controls: true, preload: 'auto', src: url });
+        const providers = [...new Set(results.map(r => r.provider).filter(Boolean))].join(', ');
+        costEl = h('span', { title: 'Actual cost reported by OpenRouter' }, 'cost…');
+        const guessed = results.some(r => r.rateGuessed);
+        const meta = h('div', { class: 'clip-meta' },
+          buffer && h('span', {}, fmtDur(buffer.duration)),
+          h('span', {}, fmtBytes(blob.size)),
+          h('span', { title: 'Time from request to finished audio' }, `${(ms / 1000).toFixed(1)} s`),
+          providers && h('span', {}, providers),
+          costEl,
+          guessed && h('span', { title: 'The response did not state a sample rate' }, 'PCM read as 24 kHz'),
+          h('a', { href: url, download: fileName(clip, ext) }, `Download .${ext}`));
+        if (buffer) {
+          const canvas = h('canvas', { class: 'wave', 'aria-hidden': 'true' });
+          body.append(canvas, audio, meta);
+          attachWave(canvas, audio, computePeaks(buffer));
+        } else {
+          body.append(audio, meta);
+        }
+        return audio;
+      },
+      cost(value) {
+        if (!costEl) return;
+        if (value == null) costEl.remove();
+        else costEl.textContent = fmtCost(value);
+      },
+    };
+  }
+
+  function generate() {
+    const err = validate();
+    if (err) { showFormError(err); return; }
+    run(buildPlan(), structuredClone(state));
+  }
+
+  function audition(model, voice) {
+    const { name } = voiceParts(voice || '');
+    const spoken = /^[A-Za-z]+$/.test(name) ? name : '';
+    const text = providerOf(model) === 'bytedance-seed'
+      ? 'A friendly narrator says: "Hi! This is a quick sample of my voice."'
+      : `Hi${spoken ? `, I'm ${spoken}` : '!'}. This is a quick sample of how I sound.`;
+    run({ kind: 'Voice audition', gap: 0, clips: [{ model, voice, requests: [bodyFor({ model, input: text, voice })] }] }, null);
+  }
+
+  function restore(snapshot, takeEl) {
+    state = structuredClone(snapshot);
+    rebuildAll();
+    loadEndpointCaps(state.model);
+    writeHash();
+    const label = takeEl?.querySelector('strong')?.textContent || 'that take';
+    toast(`Loaded the settings from ${label}.`);
+    $('#compose-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ---------- UI: voice picker ----------
+  let pickerCount = 0;
+  function voicePicker({ value = '', model, onChange, onAudition, labelledBy }) {
+    const id = `vp${++pickerCount}`;
+    const input = h('input', {
+      type: 'text', class: 'vp-input', value, autocomplete: 'off', spellcheck: 'false',
+      role: 'combobox', 'aria-autocomplete': 'list', 'aria-expanded': 'false', 'aria-controls': `${id}-list`,
+      'aria-labelledby': labelledBy,
+    });
+    const list = h('ul', { class: 'vp-list', role: 'listbox', id: `${id}-list`, hidden: true });
+    const toggle = h('button', { type: 'button', class: 'vp-toggle', tabindex: '-1', 'aria-label': 'Show voices' }, '▾');
+    const play = onAudition && h('button', { type: 'button', class: 'vp-play', title: 'Hear a short sample of this voice', onclick: () => onAudition(input.value.trim()) }, '▶ Try');
+    let items = [];
+    let active = -1;
+    let open = false;
+
+    function sync() {
+      const n = voicesOf(model()).length;
+      input.placeholder = n ? 'Choose a voice' : 'Default voice, or paste a voice ID';
+    }
+    function setActive(i) {
+      active = i;
+      $$('.vp-opt', list).forEach((li, j) => li.classList.toggle('active', j === i));
+      if (i >= 0 && list.children[i]) {
+        list.children[i].scrollIntoView({ block: 'nearest' });
+        input.setAttribute('aria-activedescendant', `${id}-o${i}`);
+      } else {
+        input.removeAttribute('aria-activedescendant');
+      }
+    }
+    function render(query) {
+      const all = voicesOf(model());
+      const q = query.trim().toLowerCase();
+      items = q ? all.filter(v => v.toLowerCase().includes(q) || voiceLabel(v).toLowerCase().includes(q)) : all;
+      list.replaceChildren();
+      if (!all.length) list.append(h('li', { class: 'vp-empty' }, 'No preset voices for this model. Type a voice ID or leave this blank.'));
+      else if (!items.length) list.append(h('li', { class: 'vp-empty' }, `No match. "${query.trim()}" will be sent as a custom voice ID.`));
+      items.forEach((v, i) => {
+        const { name, detail } = voiceParts(v);
+        const selected = v === input.value;
+        list.append(h('li', {
+          role: 'option', id: `${id}-o${i}`, class: `vp-opt${selected ? ' selected' : ''}`, 'aria-selected': String(selected), title: v,
+          onmousedown: e => { e.preventDefault(); choose(v); },
+        }, h('span', {}, name), detail && h('span', { class: 'vp-detail' }, detail)));
+      });
+      setActive(items.indexOf(input.value));
+    }
+    function show(query = '') {
+      render(query);
+      list.hidden = false;
+      open = true;
+      input.setAttribute('aria-expanded', 'true');
+    }
+    function hide() {
+      list.hidden = true;
+      open = false;
+      input.setAttribute('aria-expanded', 'false');
+    }
+    function choose(v) {
+      input.value = v;
+      onChange(v);
+      hide();
+    }
+    // Select the current voice on focus so typing replaces it and starts a fresh search.
+    let justFocused = false;
+    input.addEventListener('focus', () => { show(''); input.select(); justFocused = true; });
+    input.addEventListener('mouseup', e => { if (justFocused) e.preventDefault(); justFocused = false; });
+    input.addEventListener('click', () => { if (!open) show(''); });
+    input.addEventListener('input', () => { onChange(input.value); show(input.value); });
+    input.addEventListener('blur', hide);
+    input.addEventListener('keydown', e => {
+      if (e.metaKey || e.ctrlKey) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (!open) show('');
+        setActive(Math.min(items.length - 1, active + 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActive(Math.max(0, active - 1));
+      } else if (e.key === 'Enter' && open && active >= 0) {
+        e.preventDefault();
+        choose(items[active]);
+      } else if (e.key === 'Escape' && open) {
+        e.preventDefault();
+        hide();
+      }
+    });
+    toggle.addEventListener('mousedown', e => {
+      e.preventDefault();
+      if (open) hide();
+      else if (document.activeElement === input) show('');
+      else input.focus();
+    });
+    sync();
+    return {
+      el: h('div', { class: 'vp-wrap' }, h('div', { class: 'vp' }, input, toggle, list), play),
+      set(v) { input.value = v; },
+      sync,
+    };
+  }
+
+  // ---------- UI: rendering ----------
+  let singleVoice;
+
+  function renderModelInfo() {
+    const box = $('#model-info');
+    const m = modelById.get(state.model);
+    if (!m) { box.replaceChildren(); return; }
+    const c = caps(m.id);
+    const n = m.voices.length;
+    const desc = (m.description || '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+    const tips = tipsFor(m.id);
+    $('#model-link').href = `https://openrouter.ai/${m.id}`;
+    box.replaceChildren(
+      desc && h('p', { class: 'model-desc' }, desc),
+      h('div', { class: 'model-id' }, m.id),
+      h('div', { class: 'chips' },
+        h('span', { class: 'chip price' }, priceShort(m)),
+        h('span', { class: 'chip' }, n ? `${n} preset voice${n === 1 ? '' : 's'}` : 'No preset voices'),
+        c.instructions && h('span', { class: 'chip on' }, 'Style instructions'),
+        c.multiSpeaker && h('span', { class: 'chip on' }, 'Native conversations'),
+        c.bracketDelivery && h('span', { class: 'chip on' }, 'Inline audio tags'),
+        c.cloning && h('span', { class: 'chip on' }, 'Voice cloning'),
+        c.prompt && h('span', { class: 'chip on' }, 'Prompt-driven audio')),
+      tips.length && h('ul', { class: 'tips' }, tips.map(t => h('li', {}, t))));
+  }
+
+  function labeled(text, control, cls) {
+    return h('div', { class: cls }, h('span', { class: 'label' }, text), control);
+  }
+
+  function renderCast() {
+    const box = $('#cast');
+    box.replaceChildren(...state.cast.map((sp, i) => {
+      const labelId = `cast-voice-${sp.id}`;
+      const picker = voicePicker({
+        value: sp.voice,
+        model: () => state.model,
+        labelledBy: labelId,
+        onChange: v => { sp.voice = v; refresh(); },
+        onAudition: v => audition(state.model, v),
+      });
+      const nameId = `cast-name-${sp.id}`;
+      return h('div', { class: 'speaker' },
+        h('span', { class: 'swatch', style: `background:${SPEAKER_COLORS[i % SPEAKER_COLORS.length]}`, 'aria-hidden': 'true' }),
+        h('div', {},
+          h('label', { for: nameId }, 'Name'),
+          h('input', { id: nameId, type: 'text', value: sp.name, oninput: e => { sp.name = e.target.value; renderLines(); refresh(); } })),
+        h('div', { class: 'voice-cell' }, h('span', { class: 'label', id: labelId }, 'Voice'), picker.el),
+        h('button', {
+          type: 'button', class: 'icon', title: 'Remove speaker', 'aria-label': `Remove ${sp.name || 'speaker'}`,
+          disabled: state.cast.length <= 1, onclick: () => removeSpeaker(sp.id),
+        }, '✕'));
+    }));
+  }
+
+  function removeSpeaker(id) {
+    if (state.cast.length <= 1) return;
+    state.cast = state.cast.filter(c => c.id !== id);
+    for (const l of state.lines) if (l.speaker === id) l.speaker = state.cast[0].id;
+    renderCast();
+    renderLines();
+    refresh();
+  }
+
+  function renderLines() {
+    const box = $('#lines');
+    box.replaceChildren(...state.lines.map((ln, i) => {
+      const ci = Math.max(0, state.cast.findIndex(c => c.id === ln.speaker));
+      const sel = h('select', {
+        id: `line-sp-${ln.id}`,
+        onchange: e => { ln.speaker = e.target.value; renderLines(); refresh(); },
+      }, state.cast.map(c => h('option', { value: c.id }, c.name.trim() || 'Unnamed')));
+      sel.value = ln.speaker;
+      const move = (dir) => {
+        const j = i + dir;
+        if (j < 0 || j >= state.lines.length) return;
+        [state.lines[i], state.lines[j]] = [state.lines[j], state.lines[i]];
+        renderLines();
+        refresh();
+        $(`#lines .turn:nth-child(${j + 1}) [data-move="${dir}"]`)?.focus();
+      };
+      return h('div', { class: 'turn', style: `--spk:${SPEAKER_COLORS[ci % SPEAKER_COLORS.length]}` },
+        h('div', { class: 'turn-top' },
+          h('strong', {}, `LINE ${i + 1}`),
+          h('div', { class: 'turn-actions' },
+            h('button', { type: 'button', class: 'icon', 'data-move': '-1', 'aria-label': `Move line ${i + 1} up`, disabled: i === 0, onclick: () => move(-1) }, '↑'),
+            h('button', { type: 'button', class: 'icon', 'data-move': '1', 'aria-label': `Move line ${i + 1} down`, disabled: i === state.lines.length - 1, onclick: () => move(1) }, '↓'),
+            h('button', { type: 'button', class: 'icon', 'aria-label': `Delete line ${i + 1}`, onclick: () => { state.lines.splice(i, 1); renderLines(); refresh(); } }, '✕'))),
+        h('div', { class: 'grid2' },
+          h('div', {}, h('label', { for: sel.id }, 'Speaker'), sel),
+          h('div', {},
+            h('label', { for: `line-dl-${ln.id}` }, 'Delivery'),
+            h('input', { id: `line-dl-${ln.id}`, type: 'text', value: ln.delivery, placeholder: 'e.g. excited, whispering', oninput: e => { ln.delivery = e.target.value; refresh(); } }))),
+        h('textarea', {
+          rows: 2, value: ln.text, placeholder: 'What do they say?', 'aria-label': `Line ${i + 1} text`,
+          oninput: e => { ln.text = e.target.value; refresh(); },
+        }));
+    }));
+  }
+
+  function nextCompareModel() {
+    const used = new Set(state.compare.map(r => r.model));
+    return [...COMPARE_PICKS, ...models.map(m => m.id)].find(id => modelById.has(id) && !used.has(id)) || models[0].id;
+  }
+  function seedCompare() {
+    state.compare = [{ id: uid(), model: state.model, voice: state.voice }];
+    const second = nextCompareModel();
+    state.compare.push({ id: uid(), model: second, voice: fitVoice(second, '', 0) });
+  }
+
+  function renderCompare() {
+    const box = $('#compare-rows');
+    box.replaceChildren(...state.compare.map((row, i) => {
+      const sel = h('select', {
+        id: `cmp-model-${row.id}`,
+        onchange: e => { row.model = e.target.value; row.voice = fitVoice(row.model, row.voice, 0); renderCompare(); refresh(); },
+      });
+      fillModelSelect(sel, row.model);
+      const labelId = `cmp-voice-${row.id}`;
+      const picker = voicePicker({
+        value: row.voice,
+        model: () => row.model,
+        labelledBy: labelId,
+        onChange: v => { row.voice = v; refresh(); },
+        onAudition: v => audition(row.model, v),
+      });
+      return h('div', { class: 'cmp-row' },
+        h('span', { class: 'cmp-n' }, i + 1),
+        h('div', {}, h('label', { for: sel.id }, 'Model'), sel),
+        h('div', { class: 'voice-cell' }, h('span', { class: 'label', id: labelId }, 'Voice'), picker.el),
+        h('button', {
+          type: 'button', class: 'icon', 'aria-label': `Remove ${modelLabel(row.model)}`,
+          onclick: () => { state.compare.splice(i, 1); renderCompare(); refresh(); },
+        }, '✕'));
+    }));
+  }
+
+  function renderReference() {
+    const show = state.mode === 'single' && caps(state.model).cloning;
+    $('#ref-field').hidden = !show;
+    $('#ref-empty').hidden = !!reference;
+    $('#ref-loaded').hidden = !reference;
+    if (reference) {
+      $('#ref-name').textContent = reference.name;
+      $('#ref-size').textContent = fmtBytes(reference.size);
+      if ($('#ref-audio').src !== reference.dataUrl) $('#ref-audio').src = reference.dataUrl;
+    }
+  }
+
+  function setMode(mode) {
+    state.mode = mode;
+    $$('.tabs button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+    $$('[data-panel]').forEach(p => { p.hidden = p.dataset.panel !== mode; });
+    $('#model-card').hidden = mode === 'compare';
+    if (mode === 'compare' && !state.compare.length && models.length) seedCompare();
+    if (mode === 'conversation' && !state.lines.length) state.lines = exampleLines();
+    $('#text').value = $('#cmp-text').value = state.text;
+    $('#instructions').value = $('#cmp-instructions').value = state.instructions;
+    renderCompare();
+    renderLines();
+    renderReference();
+    refresh();
+  }
+
+  function renderHints() {
+    const s = state;
+    const m = modelById.get(s.model);
+    if (!m) return;
+    const c = caps(s.model);
+    const n = m.voices.length;
+
+    let vh = n ? `${n} voices. Click to browse or type to search.` : 'No preset voices. Leave blank for the default, or enter a voice ID.';
+    if (c.prompt) vh = 'Usually left blank: describe the voice in the text instead.';
+    if (reference && c.cloning) vh = 'Not sent while a reference clip is attached. The clip is the voice.';
+    $('#voice-hint').textContent = vh;
+
+    const ih = $('#instr-hint');
+    ih.textContent = c.instructions ? '' : c.bracketDelivery ? 'Ignored by this model. Use inline [audio tags] in the text instead.' : 'This model ignores style instructions.';
+    ih.classList.toggle('warn', !c.instructions && !!s.instructions.trim());
+
+    $('#text-count').textContent = `${s.text.length.toLocaleString()} characters`;
+    $('#cmp-count').textContent = `${s.text.length.toLocaleString()} characters, sent to each model`;
+
+    const stitchEl = $('#stitch');
+    const stitchHint = $('#stitch-hint');
+    if (!c.multiSpeaker) {
+      stitchEl.checked = true;
+      stitchEl.disabled = true;
+      stitchHint.textContent = `${shortName(m)} has no conversation mode, so each line is generated on its own and the clips are joined in your browser.`;
+    } else {
+      stitchEl.disabled = false;
+      stitchEl.checked = s.stitch;
+      const voices = s.cast.map(sp => sp.voice.trim());
+      const dupes = !s.stitch && new Set(voices).size < voices.length;
+      stitchHint.textContent = s.stitch
+        ? 'One request per line, joined with a short pause. This is slower, but you get full control.'
+        : dupes
+          ? 'Two speakers share a voice. In a native conversation they will sound like the same person.'
+          : `Sent as one request, and the model handles the turn-taking.${s.cast.length > 2 ? ' If the model rejects more than two voices, tick this box.' : ''}`;
+    }
+    $('#delivery-hint').textContent = c.instructions
+      ? 'Each line can have its own delivery style.'
+      : c.bracketDelivery
+        ? 'Delivery styles are sent as inline [tags] at the start of each line.'
+        : `${shortName(m)} ignores delivery styles. Lines are spoken as written.`;
+
+    const po = parseProviderOptions();
+    const poHint = $('#po-hint');
+    poHint.textContent = po.error || 'Keyed by provider slug. Only the matching provider\'s options are forwarded.';
+    poHint.classList.toggle('warn', !!po.error);
+  }
+
+  function renderEstimate() {
+    const el = $('#estimate');
+    if (!models.length) { el.textContent = ''; return; }
+    let plan;
+    try { plan = buildPlan(); } catch { el.textContent = ''; return; }
+    let total = 0;
+    let chars = 0;
+    let unknown = 0;
+    let free = 0;
+    for (const clip of plan.clips) {
+      const m = modelById.get(clip.model);
+      const p = +m?.pricing?.prompt || 0;
+      const c = +m?.pricing?.completion || 0;
+      const n = clip.requests.reduce((sum, b) => sum + requestChars(b), 0);
+      chars += n;
+      if (!p && !c) free++;
+      else if (p && !c) total += p * n;
+      else unknown++;
+    }
+    const parts = [`${chars.toLocaleString()} characters`];
+    if (plan.clips.length > 1) parts.push(`${plan.clips.length} models`);
+    if (plan.stitched) parts.push(`${plan.clips[0].requests.length} requests`);
+    if (total > 0) parts.push(`about ${fmtCost(total)}${unknown ? ' plus usage-based models' : ''}`);
+    else if (unknown) parts.push(plan.clips.length === 1 && caps(plan.clips[0].model).prompt ? 'billed per second of audio' : 'billed per token');
+    else if (free === plan.clips.length) parts.push('free');
+    el.textContent = parts.join(' · ');
+  }
+
+  function redact(key, value) {
+    if (typeof value === 'string' && value.startsWith('data:') && value.length > 120) return `${value.slice(0, 32)}… (${fmtBytes(value.length)} of base64)`;
+    return value;
+  }
+  function planBodies() {
+    try { return buildPlan().clips.flatMap(c => c.requests); } catch { return []; }
+  }
+  function renderHood() {
+    if (!models.length) return;
+    let plan;
+    try { plan = buildPlan(); } catch (e) { $('#req-json').textContent = e.message; return; }
+    const bodies = plan.clips.flatMap(c => c.requests);
+    const n = bodies.length;
+    $('#req-count').textContent = n === 1 ? '· 1 request' : `· ${n} requests${plan.stitched ? ', one per line' : plan.parallel ? ', in parallel' : ''}`;
+    $('#req-json').textContent = JSON.stringify(n === 1 ? bodies[0] : bodies, redact, 2);
+  }
+  const scheduleHood = debounce(renderHood, 120);
+
+  function curlFor(body, i, total) {
+    const ext = body.response_format === 'pcm' ? 'pcm' : 'mp3';
+    const out = total > 1 ? `speech-${i + 1}.${ext}` : `speech.${ext}`;
+    return [
+      'curl https://openrouter.ai/api/v1/audio/speech \\',
+      '  -H "Authorization: Bearer $OPENROUTER_API_KEY" \\',
+      '  -H "Content-Type: application/json" \\',
+      `  --output ${out} \\`,
+      "  -d @- <<'JSON'",
+      JSON.stringify(body, null, 2),
+      'JSON',
+    ].join('\n');
+  }
+
+  function renderLog() {
+    const box = $('#resp-log');
+    if (!runLog.length) { box.replaceChildren(h('p', { class: 'hint' }, 'Nothing sent yet.')); return; }
+    box.replaceChildren(...runLog.map(e => {
+      const headers = e.headers ? Object.entries(e.headers).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`) : [];
+      if (e.size) headers.push(`body: ${fmtBytes(e.size)} of audio`);
+      return h('div', { class: 'log-entry' },
+        h('div', { class: 'log-top' },
+          h('code', {}, e.model),
+          e.pending ? h('span', { class: 'muted' }, 'waiting…')
+            : e.status ? h('span', { class: e.ok ? 'http-ok' : 'http-bad' }, `HTTP ${e.status}`)
+              : h('span', { class: 'http-bad' }, 'failed'),
+          e.ms && !e.pending && h('span', { class: 'muted' }, `${(e.ms / 1000).toFixed(2)} s`)),
+        headers.length && h('pre', {}, headers.join('\n')),
+        e.errorBody && h('pre', {}, typeof e.errorBody === 'string' ? e.errorBody : JSON.stringify(e.errorBody, null, 2)),
+        e.error && !e.errorBody && h('p', { class: 'hint status-bad' }, e.error));
+    }));
+  }
+
+  function refresh() {
+    renderHints();
+    renderEstimate();
+    scheduleHood();
+    scheduleHash();
+  }
+
+  function rebuildAll() {
+    if (models.length) $('#model').value = state.model;
+    $('#text').value = $('#cmp-text').value = state.text;
+    $('#instructions').value = $('#cmp-instructions').value = state.instructions;
+    $('#conv-instr').value = state.convInstructions;
+    $('#format').value = state.format;
+    $('#speed').value = state.speed;
+    $('#gap').value = state.gapMs;
+    $('#zdr').checked = state.zdr;
+    $('#autoplay').checked = state.autoplay;
+    $('#provider-options').value = state.providerOptions;
+    singleVoice.set(state.voice);
+    singleVoice.sync();
+    renderModelInfo();
+    renderCast();
+    setMode(state.mode);
+  }
+
+  function setBusy(busy) {
+    $('#go').disabled = busy;
+    $('#go-label').textContent = busy ? 'Generating…' : 'Generate';
+    $('#stop').hidden = !busy;
+  }
+  function showFormError(msg) {
+    const el = $('#form-error');
+    el.textContent = msg;
+    el.hidden = false;
+  }
+  function hideFormError() { $('#form-error').hidden = true; }
+
+  function freshState() {
+    state = defaults();
+    if (!modelById.has(state.model)) state.model = models[0].id;
+    state.voice = fitVoice(state.model, '', 0);
+    fitCastVoices();
+    state.lines = exampleLines();
+  }
+
+  // ---------- wiring ----------
+  function wire() {
+    singleVoice = voicePicker({
+      model: () => state.model,
+      labelledBy: 'single-voice-label',
+      onChange: v => { state.voice = v; refresh(); },
+      onAudition: v => audition(state.model, v),
+    });
+    $('#single-voice').append(singleVoice.el);
+
+    $$('.tabs button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+
+    $('#model').addEventListener('change', e => {
+      state.model = e.target.value;
+      state.voice = fitVoice(state.model, state.voice, 0);
+      fitCastVoices();
+      singleVoice.set(state.voice);
+      singleVoice.sync();
+      loadEndpointCaps(state.model);
+      renderModelInfo();
+      renderCast();
+      renderReference();
+      refresh();
+    });
+
+    const bindText = (sel, key) => $(sel).addEventListener('input', e => { state[key] = e.target.value; refresh(); });
+    bindText('#text', 'text');
+    bindText('#cmp-text', 'text');
+    bindText('#instructions', 'instructions');
+    bindText('#cmp-instructions', 'instructions');
+    bindText('#conv-instr', 'convInstructions');
+    bindText('#provider-options', 'providerOptions');
+    $('#format').addEventListener('change', e => { state.format = e.target.value; refresh(); });
+    $('#speed').addEventListener('input', e => { state.speed = +e.target.value || 1; refresh(); });
+    $('#gap').addEventListener('input', e => { state.gapMs = Math.max(0, +e.target.value || 0); refresh(); });
+    $('#zdr').addEventListener('change', e => { state.zdr = e.target.checked; refresh(); });
+    $('#autoplay').addEventListener('change', e => { state.autoplay = e.target.checked; refresh(); });
+    $('#stitch').addEventListener('change', e => { state.stitch = e.target.checked; refresh(); });
+
+    $('#add-speaker').addEventListener('click', () => {
+      const vs = defaultVoices(state.model);
+      const used = new Set(state.cast.map(c => c.voice));
+      const names = ['Maya', 'Theo', 'Priya', 'Jonah', 'Ines', 'Kofi', 'Lena', 'Sam'];
+      const name = names.find(n => !state.cast.some(c => c.name === n)) || `Speaker ${state.cast.length + 1}`;
+      state.cast.push({ id: uid(), name, voice: vs.find(v => !used.has(v)) || vs[0] || '' });
+      renderCast();
+      renderLines();
+      refresh();
+      $('#cast .speaker:last-child input')?.focus();
+    });
+    $('#add-line').addEventListener('click', () => {
+      const last = state.lines[state.lines.length - 1];
+      const idx = last ? state.cast.findIndex(c => c.id === last.speaker) : -1;
+      const speaker = state.cast[(idx + 1) % state.cast.length].id;
+      state.lines.push({ id: uid(), speaker, delivery: '', text: '' });
+      renderLines();
+      refresh();
+      $('#lines .turn:last-child textarea')?.focus();
+    });
+    $('#add-compare').addEventListener('click', () => {
+      const model = nextCompareModel();
+      state.compare.push({ id: uid(), model, voice: fitVoice(model, '', 0) });
+      renderCompare();
+      refresh();
+    });
+
+    $('#load-example').addEventListener('click', () => {
+      if (state.mode === 'conversation') {
+        state.cast = defaults().cast;
+        fitCastVoices();
+        state.lines = exampleLines();
+        state.convInstructions = '';
+        renderCast();
+        renderLines();
+        $('#conv-instr').value = '';
+      } else {
+        const sample = sampleFor(state.mode === 'compare' ? (state.compare[0]?.model || state.model) : state.model);
+        state.text = sample.text;
+        state.instructions = sample.instructions;
+        $('#text').value = $('#cmp-text').value = state.text;
+        $('#instructions').value = $('#cmp-instructions').value = state.instructions;
+      }
+      refresh();
+    });
+    $('#reset').addEventListener('click', () => {
+      freshState();
+      reference = null;
+      rebuildAll();
+      try { history.replaceState(null, '', location.pathname + location.search); } catch { /* ignore */ }
+      toast('Settings reset.');
+    });
+    $('#share').addEventListener('click', async () => {
+      writeHash();
+      const ok = await copyText(location.href);
+      toast(ok ? 'Link copied. It does not include your API key.' : 'Copy failed. The link is in the address bar.');
+    });
+
+    $('#go').addEventListener('click', generate);
+    $('#stop').addEventListener('click', () => current?.abort());
+    document.addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); generate(); }
+    });
+    if (!/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) $('#go-kbd').textContent = 'Ctrl ↵';
+
+    $('#clear-takes').addEventListener('click', () => {
+      $('#takes').replaceChildren();
+      for (const url of objectUrls) URL.revokeObjectURL(url);
+      objectUrls.clear();
+      $('#takes-empty').hidden = false;
+      $('#clear-takes').hidden = true;
+    });
+
+    $('#copy-json').addEventListener('click', async () => {
+      const bodies = planBodies();
+      const ok = await copyText(JSON.stringify(bodies.length === 1 ? bodies[0] : bodies, null, 2));
+      toast(ok ? 'Request JSON copied.' : 'Copy failed.');
+    });
+    $('#copy-curl').addEventListener('click', async () => {
+      const bodies = planBodies();
+      const ok = await copyText(bodies.map((b, i) => curlFor(b, i, bodies.length)).join('\n\n'));
+      toast(ok ? `cURL command${bodies.length > 1 ? 's' : ''} copied. Set OPENROUTER_API_KEY first.` : 'Copy failed.');
+    });
+
+    // Key handling
+    const keyEl = $('#key');
+    try {
+      const saved = localStorage.getItem(KEY_STORAGE);
+      if (saved) { apiKey = saved; keyEl.value = saved; $('#remember').checked = true; }
+    } catch { /* storage unavailable */ }
+    keyEl.addEventListener('input', () => {
+      apiKey = keyEl.value.trim();
+      $('#key-status').textContent = '';
+      if ($('#remember').checked) { try { localStorage.setItem(KEY_STORAGE, apiKey); } catch { /* ignore */ } }
+    });
+    $('#remember').addEventListener('change', e => {
+      try {
+        if (e.target.checked && apiKey) localStorage.setItem(KEY_STORAGE, apiKey);
+        else localStorage.removeItem(KEY_STORAGE);
+      } catch { toast('This browser blocked local storage.'); }
+    });
+    $('#toggle-key').addEventListener('click', e => {
+      const showing = keyEl.type === 'text';
+      keyEl.type = showing ? 'password' : 'text';
+      e.target.textContent = showing ? 'Show' : 'Hide';
+    });
+    $('#check-key').addEventListener('click', checkKey);
+
+    // Reference clip
+    $('#ref-file').addEventListener('change', e => {
+      const f = e.target.files[0];
+      if (!f) return;
+      if (f.size > MAX_REF_BYTES) {
+        showFormError('Reference clips must be 15 MB or smaller.');
+        e.target.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        reference = { name: f.name, size: f.size, dataUrl: reader.result };
+        e.target.value = '';
+        renderReference();
+        refresh();
+      };
+      reader.readAsDataURL(f);
+    });
+    $('#ref-clear').addEventListener('click', () => {
+      reference = null;
+      $('#ref-audio').removeAttribute('src');
+      renderReference();
+      refresh();
+    });
+    $('#ref-transcript').addEventListener('input', refresh);
+  }
+
+  async function checkKey() {
+    const el = $('#key-status');
+    const set = (text, cls) => { el.textContent = text; el.className = `key-status ${cls || ''}`; };
+    if (!apiKey) { set('Enter a key first.', 'status-bad'); return; }
+    set('Checking…');
+    try {
+      const r = await fetch(`${API}/key`, { headers: { Authorization: `Bearer ${apiKey}` } });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { set(j.error?.message || `HTTP ${r.status}`, 'status-bad'); return; }
+      const d = j.data || {};
+      const left = d.limit_remaining != null ? `${fmtCost(+d.limit_remaining)} left` : 'no spending limit';
+      set(`✓ Key works · ${left} · ${fmtCost(+d.usage || 0)} used`, 'status-ok');
+    } catch (e) {
+      set(`Network error: ${e.message}`, 'status-bad');
+    }
+  }
+
+  async function init() {
+    wire();
+    try {
+      await loadModels();
+    } catch (e) {
+      $('#model-count').textContent = 'Models unavailable';
+      $('#model').replaceChildren(h('option', {}, 'Could not load models'));
+      $('#model-info').replaceChildren(h('div', { class: 'load-error' },
+        `Couldn't load the speech model list from OpenRouter (${e.message}). `,
+        h('button', { type: 'button', class: 'small', onclick: () => location.reload() }, 'Try again')));
+      return;
+    }
+    const providers = new Set(models.map(groupName)).size;
+    $('#model-count').textContent = `${models.length} speech models · ${providers} providers`;
+
+    const fromHash = readHash();
+    if (fromHash) {
+      state = fromHash;
+      if (!modelById.has(state.model)) {
+        state.model = modelById.has(DEFAULT_MODEL) ? DEFAULT_MODEL : models[0].id;
+        state.voice = fitVoice(state.model, state.voice, 0);
+        fitCastVoices();
+      }
+      state.compare = state.compare.filter(r => modelById.has(r.model));
+    } else {
+      freshState();
+    }
+    fillModelSelect($('#model'), state.model);
+    rebuildAll();
+    loadEndpointCaps(state.model);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
