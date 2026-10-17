@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<!-- Only openrouter.ai and this site's own files can be reached. Your browser blocks every other request. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' https://openrouter.ai; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>Voice Library · TTS Playground</title>
@@ -470,7 +472,7 @@
         keyInput),
       h('p', { class: 'hint' }, apiKey && localStorageKey()
         ? 'Using the key remembered by the Playground. Live previews play in this tab only and are not saved.'
-        : 'Live previews use your key, play in this tab only and are not saved. The key stays in memory.'));
+        : 'Live previews use your key, which is sent only to openrouter.ai. They play in this tab only and are not saved. The key stays in memory.'));
     box.hidden = false;
   }
 

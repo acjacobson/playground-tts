@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<!-- Only openrouter.ai and this site's own files can be reached. Your browser blocks every other request. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' https://openrouter.ai; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>OpenRouter TTS Playground</title>
@@ -219,6 +221,11 @@
   .key-status { font-size: 12.5px; }
   .status-ok { color: var(--ok); }
   .status-bad { color: var(--err); }
+  details.trust { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 10px; }
+  details.trust > summary { font-size: 13px; font-weight: 650; }
+  details.trust ul { margin: 8px 0 0; padding-left: 18px; font-size: 12.5px; color: var(--muted); }
+  details.trust li + li { margin-top: 6px; }
+  details.trust strong { color: var(--ink); }
 
   /* Takes */
   .empty { border: 1px dashed var(--line-strong); border-radius: 12px; padding: 26px 16px; text-align: center; color: var(--muted); font-size: 13.5px; }
@@ -492,7 +499,17 @@
           <button type="button" class="small" id="check-key">Check key</button>
           <span class="key-status" id="key-status" role="status"></span>
         </div>
-        <p class="hint" style="margin-top:12px">Your browser sends requests straight to openrouter.ai. The key stays in this page's memory and is saved only if you tick Remember. Usage is billed to your OpenRouter account. <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">Get a key ↗</a></p>
+        <p class="hint" style="margin-top:12px">Your key is sent only to openrouter.ai, straight from your browser. It stays in this page's memory and is saved only if you tick Remember. Usage is billed to your OpenRouter account. <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">Get a key ↗</a></p>
+        <details class="trust">
+          <summary>Why you can trust this page with your key</summary>
+          <ul>
+            <li><strong>No server and no trackers.</strong> This is a static page with no analytics and no third-party scripts. What you type goes nowhere except OpenRouter.</li>
+            <li><strong>Your browser enforces it.</strong> The page's Content Security Policy allows background requests only to openrouter.ai and to this site's own files, so your browser blocks anything else, even if the code were changed. View the page source to see the policy at the top.</li>
+            <li><strong>Open source.</strong> The site is served as-is from <a href="https://github.com/acjacobson/playground-tts" target="_blank" rel="noopener">github.com/acjacobson/playground-tts</a>, so you can read exactly what runs.</li>
+            <li><strong>Check it yourself.</strong> Open your browser's developer tools, go to the Network tab and generate something. Every request goes to openrouter.ai or to this site.</li>
+            <li><strong>Limit the risk.</strong> Create a separate key with a small credit limit for this page at <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">openrouter.ai/settings/keys</a>, and delete it when you're done.</li>
+          </ul>
+        </details>
       </section>
 
       <section class="card" id="out" aria-labelledby="out-h">

@@ -135,6 +135,19 @@ Some behaviour can't be read from the API, so it's written into the code from [O
 
 If a model rejects the audio format and names the one it wants, the page and the script switch to that format automatically.
 
+## Your API key
+
+The pages are built so you don't have to take their handling of your key on trust:
+
+- **There is no server.** The pages are static files with no analytics, no third-party scripts and no outside fonts. Your browser sends your key straight to OpenRouter, and nowhere else.
+- **Your browser enforces it.** Both pages carry a Content Security Policy at the top of the HTML. It allows background requests only to `https://openrouter.ai` and to the site's own files, and blocks image beacons and form posts. Even if the code were changed to send the key elsewhere in the background, the browser would refuse.
+- **You can check it.** Use View Source to read the policy, or watch your browser's Network tab while you use the page. GitHub Pages serves the files in this repo as they are.
+- **Use a limited key.** OpenRouter lets you create extra keys with their own credit limit. Making one for this page, and deleting it afterwards, caps what any key can cost you.
+
+The key stays in the page's memory unless you tick **Remember on this device**, which keeps it in the browser's local storage for that site. It never goes into share links.
+
+One limit to be aware of: a policy like this can't stop a page from navigating the whole tab to another site. That wouldn't be silent, because you'd see the page change, and the code that did it would be visible in this repo.
+
 ## License
 
 The code is released under the [MIT License](LICENSE).
