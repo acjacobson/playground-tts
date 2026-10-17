@@ -1,0 +1,801 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Voice Library · TTS Playground</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f2efe9;
+    --card: #fffdf9;
+    --sunken: #f7f4ee;
+    --field: #ffffff;
+    --ink: #211d1a;
+    --muted: #6e675f;
+    --line: #e5dfd5;
+    --line-strong: #d2c9bb;
+    --accent: #c2410c;
+    --accent-hover: #a5370a;
+    --accent-ink: #ffffff;
+    --accent-soft: #fbeadf;
+    --ok: #157a3c;
+    --err: #b42318;
+    --focus: #f0a37a;
+    --shadow: 0 1px 2px rgb(60 40 20 / 5%), 0 6px 20px rgb(60 40 20 / 5%);
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --bg: #141311;
+      --card: #1c1a18;
+      --sunken: #181715;
+      --field: #121110;
+      --ink: #f0ebe4;
+      --muted: #a69e94;
+      --line: #2e2a27;
+      --line-strong: #45403a;
+      --accent: #f97316;
+      --accent-hover: #fb8a3c;
+      --accent-ink: #1c0d03;
+      --accent-soft: #3a2215;
+      --ok: #4ade80;
+      --err: #f87171;
+      --focus: #c2410c;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  a { color: var(--accent); }
+  button, input, select { font: inherit; color: inherit; }
+  button { cursor: pointer; border: 1px solid var(--line-strong); background: var(--card); border-radius: 9px; padding: 8px 13px; font-weight: 600; font-size: 14px; }
+  button:hover:not(:disabled) { background: var(--sunken); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  input, select { width: 100%; min-height: 40px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--field); padding: 9px 11px; }
+  input[type="checkbox"] { width: auto; min-height: 0; margin: 0; accent-color: var(--accent); }
+  label, .label { display: block; font-size: 12px; font-weight: 650; margin-bottom: 6px; }
+  h1 { font-size: clamp(30px, 6vw, 44px); letter-spacing: -0.035em; line-height: 1.05; margin: 10px 0 12px; }
+  h2 { font-size: 18px; letter-spacing: -0.01em; margin: 0; }
+  p { margin: 6px 0; }
+  code { font-family: var(--mono); font-size: 0.92em; }
+  .muted { color: var(--muted); }
+  .hint { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; }
+
+  .shell { max-width: 1240px; margin: 0 auto; padding: 28px 32px 56px; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 750; letter-spacing: 0.18em; }
+  .onair { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+  .badge { font-size: 12px; border: 1px solid var(--line-strong); border-radius: 999px; padding: 4px 11px; color: var(--muted); background: var(--card); }
+  .nav { display: flex; gap: 3px; background: var(--sunken); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+  .nav a { text-decoration: none; color: var(--muted); font-size: 13px; font-weight: 650; padding: 5px 12px; border-radius: 7px; }
+  .nav a:hover { color: var(--ink); }
+  .nav a[aria-current="page"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgb(0 0 0 / 6%); }
+  header { margin: 30px 0 22px; max-width: 780px; }
+  .lede { color: var(--muted); font-size: 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; box-shadow: var(--shadow); min-width: 0; }
+
+  /* Coverage */
+  .coverage { border-left: 4px solid var(--accent); margin-bottom: 16px; }
+  .coverage h2 { font-size: 16px; }
+  .meter { height: 6px; border-radius: 999px; background: var(--sunken); border: 1px solid var(--line); overflow: hidden; margin: 10px 0 12px; }
+  .meter span { display: block; height: 100%; background: var(--accent); }
+  .cmd { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; }
+  .cmd pre { flex: 1; min-width: 0; margin: 0; background: var(--sunken); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: 12.5px/1.6 var(--mono); overflow-x: auto; }
+  .live-key { display: flex; gap: 8px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+  .live-key input { flex: 1; min-width: 200px; max-width: 360px; font-family: var(--mono); font-size: 13px; }
+  .new-models { margin: 8px 0 0; padding-left: 20px; font-size: 13.5px; }
+
+  /* Filters */
+  .filters { position: sticky; top: 10px; z-index: 10; }
+  .filter-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.3fr); gap: 10px; }
+  .filter-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px 16px; margin-top: 12px; flex-wrap: wrap; }
+  .filter-foot .left { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; margin: 0; }
+  #summary { font-size: 13.5px; color: var(--muted); }
+  .play-all { display: inline-flex; align-items: center; gap: 8px; }
+
+  /* Results */
+  .groups { display: flex; flex-direction: column; gap: 30px; margin-top: 24px; }
+  .group-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 14px; flex-wrap: wrap; margin-bottom: 10px; }
+  .group-meta { color: var(--muted); font-size: 13px; }
+  .group-meta code { font-size: 12px; }
+  .group-note { font-size: 13px; color: var(--muted); margin: -4px 0 10px; }
+  .voice-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+  .voice { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 12px 13px; overflow: hidden; }
+  .voice.playing { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .play { width: 44px; height: 44px; border-radius: 50%; padding: 0; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); border: 1.5px solid var(--accent); }
+  .play:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .voice.missing .play { background: transparent; color: var(--muted); border: 1.5px dashed var(--line-strong); }
+  .voice.missing .play:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); background: transparent; }
+  .voice.live .play { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
+  .play svg { display: block; }
+  .v-name { font-weight: 700; font-size: 15px; display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; line-height: 1.3; }
+  .v-tag { font-size: 11px; font-weight: 600; color: var(--muted); background: var(--sunken); border: 1px solid var(--line); border-radius: 999px; padding: 0 7px; }
+  .v-lang { font-size: 12.5px; color: var(--muted); }
+  .v-id { font: 11.5px/1.5 var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .v-text { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; font-style: italic; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .v-actions { display: flex; gap: 12px; font-size: 12px; margin-top: 6px; flex-wrap: wrap; }
+  .v-actions a { font-weight: 650; }
+  .v-status { font-size: 12px; margin-top: 6px; color: var(--muted); }
+  .v-status.bad { color: var(--err); }
+  .v-progress { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--accent); }
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--line-strong); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+  .empty { border: 1px dashed var(--line-strong); border-radius: 14px; padding: 30px 16px; text-align: center; color: var(--muted); }
+  .load-error { background: var(--accent-soft); border-radius: 12px; padding: 14px; }
+
+  footer { margin-top: 40px; color: var(--muted); font-size: 13px; }
+  .toast { position: fixed; left: 50%; bottom: 24px; z-index: 50; max-width: calc(100vw - 32px); transform: translate(-50%, 16px); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 13.5px; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 1000px) {
+    .filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .filter-grid .search { grid-column: 1 / -1; }
+  }
+  @media (max-width: 700px) {
+    .filters { position: static; }
+  }
+  @media (max-width: 640px) {
+    .shell { padding: 18px 16px 40px; }
+    header { margin: 22px 0 18px; }
+    .card { padding: 16px; border-radius: 14px; }
+    .voice-grid { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="top">
+    <div class="brand"><span class="onair" aria-hidden="true"></span>TTS PLAYGROUND</div>
+    <nav class="nav" aria-label="Pages">
+      <a href="index.html">Playground</a>
+      <a href="voices.html" aria-current="page">Voices</a>
+    </nav>
+    <span class="badge" id="model-count">Loading voices…</span>
+  </div>
+
+  <header>
+    <h1>Voice library</h1>
+    <p class="lede">Every preset voice on OpenRouter's speech models, with a short sample you can play at once. The model list comes live from OpenRouter. Samples are audio files in <code>samples/</code>, and each one is spoken in its voice's own language.</p>
+  </header>
+
+  <section class="card coverage" id="coverage" hidden aria-labelledby="coverage-h"></section>
+
+  <section class="card filters" aria-label="Filters">
+    <div class="filter-grid">
+      <div>
+        <label for="f-provider">Provider</label>
+        <select id="f-provider" disabled><option>Loading…</option></select>
+      </div>
+      <div>
+        <label for="f-model">Model</label>
+        <select id="f-model" disabled><option>Loading…</option></select>
+      </div>
+      <div>
+        <label for="f-lang">Language</label>
+        <select id="f-lang" disabled><option>Loading…</option></select>
+      </div>
+      <div>
+        <label for="f-status">Samples</label>
+        <select id="f-status">
+          <option value="all">All voices</option>
+          <option value="have">With a sample</option>
+          <option value="missing">Missing a sample</option>
+        </select>
+      </div>
+      <div class="search">
+        <label for="f-q">Search</label>
+        <input id="f-q" type="search" placeholder="Name, voice ID or model" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+    <div class="filter-foot">
+      <div class="left">
+        <span id="summary" role="status">Loading…</span>
+        <label class="check" id="multi-wrap" hidden><input type="checkbox" id="f-multi"> Include multilingual voices</label>
+      </div>
+      <button type="button" class="play-all" id="play-all" disabled>Play all</button>
+    </div>
+  </section>
+
+  <main class="groups" id="results" aria-live="polite"></main>
+
+  <footer>
+    Voices and models come from OpenRouter's <a href="https://openrouter.ai/models?output_modalities=speech" target="_blank" rel="noopener">speech model list</a>.
+    Languages are read from voice IDs. "Multilingual" voices speak the language of the text you give them, and their samples are in English.
+  </footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<noscript><p style="text-align:center">This page needs JavaScript.</p></noscript>
+
+<script src="voice-catalog.js"></script>
+<script src="samples/manifest.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const API = 'https://openrouter.ai/api/v1';
+  const KEY_STORAGE = 'openrouter-tts-playground.key';
+  const C = window.VoiceCatalog;
+  const manifest = window.VOICE_SAMPLES || {};
+  const savedSamples = manifest.samples || {};
+  const savedFailures = manifest.failures || {};
+
+  const ICON_PLAY = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>';
+  const ICON_PAUSE = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/></svg>';
+  const ICON_GENERATE = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+  // ---------- helpers ----------
+  const $ = (sel, root = document) => root.querySelector(sel);
+  function h(tag, props, ...kids) {
+    const el = document.createElement(tag);
+    let value;
+    for (const [k, v] of Object.entries(props || {})) {
+      if (v == null || v === false) continue;
+      if (k === 'value') value = v;
+      else if (k === 'checked') el.checked = !!v;
+      else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? '' : String(v));
+    }
+    for (const kid of kids.flat(Infinity)) {
+      if (kid == null || kid === false) continue;
+      el.append(kid instanceof Node ? kid : String(kid));
+    }
+    if (value !== undefined) el.value = value;
+    return el;
+  }
+  // replaceChildren() turns arrays and null into text, so flatten and drop empty parts first.
+  function fill(el, ...kids) {
+    el.replaceChildren(...kids.flat(Infinity).filter(k => k instanceof Node || (typeof k === 'string' && k)));
+  }
+  let toastTimer;
+  function toast(msg) {
+    const el = $('#toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+  }
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      const ta = h('textarea', { style: 'position:fixed;opacity:0' });
+      ta.value = text;
+      document.body.append(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      return ok;
+    }
+  }
+  function b64urlEncode(str) {
+    const bytes = new TextEncoder().encode(str);
+    let bin = '';
+    for (const b of bytes) bin += String.fromCharCode(b);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  const money = x => (x ? '$' + String(+x.toPrecision(3)) : '$0');
+  const fmtCost = x => (x < 0.01 ? `$${x.toFixed(4)}` : `$${x.toFixed(2)}`);
+  const plural = (n, word) => `${n.toLocaleString()} ${word}${n === 1 ? '' : 's'}`;
+  const providerOf = id => id.split('/')[0];
+  function shortName(m) {
+    const i = m.name.indexOf(': ');
+    return i > 0 ? m.name.slice(i + 2) : m.name;
+  }
+  function groupName(m) {
+    const i = m.name.indexOf(': ');
+    return i > 0 ? m.name.slice(0, i) : providerOf(m.id);
+  }
+  function priceShort(m) {
+    const p = +m.pricing?.prompt || 0;
+    const c = +m.pricing?.completion || 0;
+    if (!p && !c) return 'free';
+    if (p && !c) return `${money(p * 1e6)}/M chars`;
+    if (!p && c) return `${money(c)}/sec of audio`;
+    return `${money(p * 1e6)} in · ${money(c * 1e6)} out per M tokens`;
+  }
+  // Same rough estimate as scripts/generate-samples.mjs.
+  function estimateCost(m, text) {
+    const p = +m.pricing?.prompt || 0;
+    const c = +m.pricing?.completion || 0;
+    const seconds = Math.max(2, text.length / 15);
+    if (!p && !c) return 0;
+    if (p && !c) return p * text.length;
+    if (!p) return c * seconds;
+    return p * Math.ceil(text.length / 4) + c * seconds * 32;
+  }
+
+  // ---------- data ----------
+  let models = [];
+  let entries = [];
+  const byKey = new Map();
+  const filters = { provider: 'all', model: 'all', lang: 'any', multi: false, status: 'all', q: '' };
+  const live = new Map();        // key -> object URL of a preview made in this tab
+  const pendingLive = new Set();
+  let apiKey = '';
+
+  async function loadModels() {
+    const res = await fetch(`${API}/models?output_modalities=speech`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    models = (json.data || []).sort((a, b) => groupName(a).localeCompare(groupName(b)) || (b.created || 0) - (a.created || 0));
+    if (!models.length) throw new Error('OpenRouter returned no speech models.');
+    entries = models.flatMap(m => C.voicesFor(m).map(voice => {
+      const key = C.sampleKey(m.id, voice);
+      const sample = savedSamples[key] || null;
+      return {
+        key, model: m, voice,
+        info: C.voiceInfo(m.id, voice),
+        group: C.languageGroup(m.id, voice),
+        text: sample?.text || C.sampleText(m.id, voice),
+        sample,
+        failure: sample ? null : savedFailures[key] || null,
+      };
+    }));
+    byKey.clear();
+    for (const e of entries) byKey.set(e.key, e);
+  }
+
+  function matches(e, ignore) {
+    const f = filters;
+    if (ignore !== 'provider' && f.provider !== 'all' && providerOf(e.model.id) !== f.provider) return false;
+    if (ignore !== 'model' && f.model !== 'all' && e.model.id !== f.model) return false;
+    if (ignore !== 'lang' && f.lang !== 'any' && e.group !== f.lang && !(f.multi && e.group === 'multi')) return false;
+    if (ignore !== 'status' && f.status !== 'all' && (f.status === 'have') !== !!e.sample) return false;
+    if (ignore !== 'q' && f.q) {
+      const hay = [e.voice, e.info.name, e.model.name, e.model.id, C.languageName(e.info.lang), e.info.detail].join(' ').toLowerCase();
+      if (!f.q.toLowerCase().split(/\s+/).filter(Boolean).every(word => hay.includes(word))) return false;
+    }
+    return true;
+  }
+  const visibleEntries = () => entries.filter(e => matches(e));
+
+  // ---------- URL state ----------
+  function readHash() {
+    const p = new URLSearchParams(location.hash.slice(1));
+    filters.provider = p.get('provider') || 'all';
+    filters.model = p.get('model') || 'all';
+    filters.lang = p.get('lang') || 'any';
+    filters.status = p.get('status') || 'all';
+    filters.q = p.get('q') || '';
+    filters.multi = p.get('multi') === '1';
+    const providers = new Set(models.map(m => providerOf(m.id)));
+    if (filters.provider !== 'all' && !providers.has(filters.provider)) filters.provider = 'all';
+    if (filters.model !== 'all' && !models.some(m => m.id === filters.model)) filters.model = 'all';
+    if (!['all', 'have', 'missing'].includes(filters.status)) filters.status = 'all';
+  }
+  function writeHash() {
+    const p = new URLSearchParams();
+    if (filters.provider !== 'all') p.set('provider', filters.provider);
+    if (filters.model !== 'all') p.set('model', filters.model);
+    if (filters.lang !== 'any') p.set('lang', filters.lang);
+    if (filters.multi) p.set('multi', '1');
+    if (filters.status !== 'all') p.set('status', filters.status);
+    if (filters.q) p.set('q', filters.q);
+    const hash = p.toString();
+    try { history.replaceState(null, '', `${location.pathname}${location.search}${hash ? `#${hash}` : ''}`); } catch { /* ignore */ }
+  }
+
+  // ---------- controls ----------
+  function renderControls() {
+    const prov = $('#f-provider');
+    const counts = new Map();
+    for (const e of entries) counts.set(providerOf(e.model.id), (counts.get(providerOf(e.model.id)) || 0) + 1);
+    const providerNames = new Map(models.map(m => [providerOf(m.id), groupName(m)]));
+    fill(prov, 
+      h('option', { value: 'all' }, 'All providers'),
+      [...providerNames].sort((a, b) => a[1].localeCompare(b[1])).map(([slug, name]) => h('option', { value: slug }, `${name} (${counts.get(slug)})`)));
+    prov.value = filters.provider;
+    prov.disabled = false;
+
+    const modelSel = $('#f-model');
+    const inProvider = models.filter(m => filters.provider === 'all' || providerOf(m.id) === filters.provider);
+    const option = m => {
+      const n = C.voicesFor(m).filter(Boolean).length;
+      return h('option', { value: m.id }, `${shortName(m)} · ${n ? plural(n, 'voice') : 'default voice'}`);
+    };
+    const groups = new Map();
+    for (const m of inProvider) {
+      if (!groups.has(groupName(m))) groups.set(groupName(m), []);
+      groups.get(groupName(m)).push(m);
+    }
+    fill(modelSel, 
+      h('option', { value: 'all' }, 'All models'),
+      filters.provider === 'all'
+        ? [...groups].map(([g, ms]) => h('optgroup', { label: g }, ms.map(option)))
+        : inProvider.map(option));
+    modelSel.value = filters.model;
+    modelSel.disabled = false;
+
+    const langSel = $('#f-lang');
+    const langCounts = new Map();
+    for (const e of entries) if (matches(e, 'lang')) langCounts.set(e.group, (langCounts.get(e.group) || 0) + 1);
+    if (filters.lang !== 'any' && !langCounts.has(filters.lang)) langCounts.set(filters.lang, 0);
+    const langs = [...langCounts].filter(([g]) => g !== 'multi').sort((a, b) => C.languageName(a[0]).localeCompare(C.languageName(b[0])));
+    fill(langSel, 
+      h('option', { value: 'any' }, 'Any language'),
+      langCounts.has('multi') && h('option', { value: 'multi' }, `Multilingual (${langCounts.get('multi')})`),
+      langs.map(([g, n]) => h('option', { value: g }, `${C.languageName(g)} (${n})`)));
+    langSel.value = filters.lang;
+    langSel.disabled = false;
+
+    $('#f-status').value = filters.status;
+    $('#f-q').value = filters.q;
+    $('#f-multi').checked = filters.multi;
+    $('#multi-wrap').hidden = filters.lang === 'any' || filters.lang === 'multi';
+  }
+
+  // ---------- coverage ----------
+  function renderCoverage() {
+    const box = $('#coverage');
+    const total = entries.length;
+    const missing = entries.filter(e => !e.sample);
+    if (!missing.length) { box.hidden = true; return; }
+    const have = total - missing.length;
+    const cost = missing.reduce((sum, e) => sum + estimateCost(e.model, e.text), 0);
+    const untouched = models.filter(m => C.voicesFor(m).every(v => !savedSamples[C.sampleKey(m.id, v)]));
+    const failed = missing.filter(e => e.failure).length;
+    const command = 'node scripts/generate-samples.mjs';
+    const keyInput = h('input', {
+      id: 'live-key', type: 'password', placeholder: 'sk-or-v1-…', autocomplete: 'off', spellcheck: 'false', value: apiKey,
+      'aria-label': 'OpenRouter API key for live previews',
+      oninput: e => { apiKey = e.target.value.trim(); renderResults(); },
+    });
+    fill(box, 
+      h('h2', { id: 'coverage-h' }, have
+        ? `${missing.length.toLocaleString()} of ${total.toLocaleString()} voices don't have a sample yet`
+        : `No samples yet for the ${total.toLocaleString()} voices on OpenRouter`),
+      h('div', { class: 'meter', role: 'img', 'aria-label': `${have} of ${total} voices have samples` }, h('span', { style: `width:${(have / total) * 100}%` })),
+      have && untouched.length
+        ? [h('p', {}, `${plural(untouched.length, 'model')} ha${untouched.length === 1 ? 's' : 've'} no samples at all, probably because OpenRouter added ${untouched.length === 1 ? 'it' : 'them'} after the last run:`),
+            h('ul', { class: 'new-models' }, untouched.slice(0, 8).map(m => h('li', {}, `${m.name} `, h('span', { class: 'muted' }, `(${plural(C.voicesFor(m).length, 'voice')})`))),
+              untouched.length > 8 && h('li', { class: 'muted' }, `and ${untouched.length - 8} more`))]
+        : null,
+      failed ? h('p', { class: 'hint' }, `${plural(failed, 'voice')} failed in the last run. The script tries them again.`) : null,
+      h('p', {}, `Run this in the project folder with `, h('code', {}, 'OPENROUTER_API_KEY'), ` set. It makes only the missing samples, shows the cost first (about ${fmtCost(cost)}) and asks before spending. Then reload this page.`),
+      h('div', { class: 'cmd' },
+        h('pre', {}, h('code', {}, `export OPENROUTER_API_KEY=sk-or-…\n${command}`)),
+        h('button', { type: 'button', onclick: async () => toast((await copyText(command)) ? 'Command copied.' : 'Copy failed.') }, 'Copy')),
+      h('p', { class: 'hint' }, 'Add ', h('code', {}, '--dry-run'), ' to see the list and the cost without generating anything.'),
+      h('div', { class: 'live-key' },
+        h('label', { for: 'live-key', style: 'margin:0' }, 'Or preview missing voices live:'),
+        keyInput),
+      h('p', { class: 'hint' }, apiKey && localStorageKey()
+        ? 'Using the key remembered by the Playground. Live previews play in this tab only and are not saved.'
+        : 'Live previews use your key, play in this tab only and are not saved. The key stays in memory.'));
+    box.hidden = false;
+  }
+
+  function localStorageKey() {
+    try { return localStorage.getItem(KEY_STORAGE) || ''; } catch { return ''; }
+  }
+
+  // ---------- results ----------
+  const cardRefs = new Map();
+
+  function playgroundLink(e) {
+    return `index.html#s=${b64urlEncode(JSON.stringify({ m: 'single', mo: e.model.id, v: e.voice }))}`;
+  }
+
+  function renderResults() {
+    const box = $('#results');
+    cardRefs.clear();
+    const visible = visibleEntries();
+    const byModel = new Map();
+    for (const e of visible) {
+      if (!byModel.has(e.model.id)) byModel.set(e.model.id, []);
+      byModel.get(e.model.id).push(e);
+    }
+    const withSample = visible.filter(e => e.sample).length;
+    $('#summary').textContent = visible.length
+      ? `Showing ${plural(visible.length, 'voice')} from ${plural(byModel.size, 'model')} · ${withSample.toLocaleString()} with samples`
+      : 'No voices match these filters.';
+    $('#play-all').disabled = !visible.some(e => e.sample || live.has(e.key));
+
+    if (!visible.length) {
+      box.replaceChildren(h('div', { class: 'empty' }, 'No voices match these filters. ',
+        h('button', { type: 'button', onclick: clearFilters }, 'Clear filters')));
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    for (const [, list] of byModel) {
+      const m = list[0].model;
+      const voiceCount = C.voicesFor(m).filter(Boolean).length;
+      const have = list.filter(e => e.sample).length;
+      frag.append(h('section', { class: 'group', 'aria-label': m.name },
+        h('div', { class: 'group-head' },
+          h('h2', {}, shortName(m)),
+          h('div', { class: 'group-meta' },
+            `${groupName(m)} · `, h('code', {}, m.id), ` · ${priceShort(m)} · ${have}/${list.length} sampled · `,
+            h('a', { href: `https://openrouter.ai/${m.id}`, target: '_blank', rel: 'noopener' }, 'OpenRouter ↗'))),
+        !voiceCount && h('p', { class: 'group-note' }, "No preset voice list. The sample uses the provider's default voice. In the Playground you can also paste a voice ID or attach a reference clip."),
+        h('div', { class: 'voice-grid' }, list.map(voiceCard))));
+    }
+    box.replaceChildren(frag);
+    if (current) syncCard(current);
+  }
+
+  function voiceCard(e) {
+    const { name, lang, detail } = e.info;
+    const langLabel = C.languageName(lang);
+    const btn = h('button', { type: 'button', class: 'play', onclick: () => onPlay(e) });
+    const status = h('div', { class: 'v-status' });
+    const progress = h('div', { class: 'v-progress', 'aria-hidden': 'true' });
+    const download = h('a', { download: '' }, 'Download');
+    const el = h('article', { class: 'voice', 'data-key': e.key },
+      btn,
+      h('div', { style: 'min-width:0' },
+        h('div', { class: 'v-name' }, name, detail && h('span', { class: 'v-tag' }, detail)),
+        h('div', { class: 'v-lang' }, lang ? `${langLabel} · ${lang}` : langLabel),
+        e.voice && e.voice !== name && h('div', { class: 'v-id', title: e.voice }, e.voice),
+        h('p', { class: 'v-text', lang: lang || 'en', title: e.text }, `“${e.text}”`),
+        h('div', { class: 'v-actions' },
+          h('a', { href: playgroundLink(e) }, 'Use in Playground'),
+          download),
+        status),
+      progress);
+    cardRefs.set(e.key, { el, btn, status, progress, download });
+    syncCard(e);
+    return el;
+  }
+
+  function syncCard(e) {
+    const ref = cardRefs.get(e.key);
+    if (!ref) return;
+    const src = e.sample?.file || live.get(e.key);
+    const isCurrent = current === e;
+    const playing = isCurrent && !player.paused;
+    const label = `${e.info.name}, ${shortName(e.model)}`;
+    ref.el.classList.toggle('missing', !src);
+    ref.el.classList.toggle('live', !e.sample && live.has(e.key));
+    ref.el.classList.toggle('playing', isCurrent);
+    if (pendingLive.has(e.key)) {
+      ref.btn.innerHTML = '<span class="spinner" aria-hidden="true"></span>';
+      ref.btn.setAttribute('aria-label', `Generating a preview of ${label}`);
+    } else if (!src) {
+      ref.btn.innerHTML = ICON_GENERATE;
+      ref.btn.setAttribute('aria-label', apiKey ? `Generate a live preview of ${label}` : `No sample for ${label}`);
+    } else {
+      ref.btn.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
+      ref.btn.setAttribute('aria-label', `${playing ? 'Pause' : 'Play'} ${label}`);
+    }
+    ref.btn.setAttribute('aria-pressed', String(playing));
+    ref.download.hidden = !src;
+    if (src) {
+      ref.download.href = src;
+      ref.download.setAttribute('download', `${C.sampleBase(e.model.id, e.voice).split('/').slice(1).join('_')}.${e.sample?.file.split('.').pop() || 'mp3'}`);
+    }
+    let text = '';
+    let bad = false;
+    if (e.loadError) { text = e.loadError; bad = true; }
+    else if (e.liveError) { text = `Preview failed: ${e.liveError}`; bad = true; }
+    else if (!e.sample && live.has(e.key)) text = 'Live preview, not saved';
+    else if (!e.sample && e.failure) { text = `Last run failed: ${e.failure.status ? `HTTP ${e.failure.status}, ` : ''}${e.failure.error}`; bad = true; }
+    else if (!e.sample) text = apiKey ? 'No sample yet. Press + to preview it live.' : 'No sample yet';
+    ref.status.textContent = text;
+    ref.status.classList.toggle('bad', bad);
+    ref.status.hidden = !text;
+    if (!isCurrent) ref.progress.style.width = '0';
+  }
+
+  function clearFilters() {
+    Object.assign(filters, { provider: 'all', model: 'all', lang: 'any', multi: false, status: 'all', q: '' });
+    update();
+  }
+
+  function update() {
+    stopQueue();
+    renderControls();
+    renderResults();
+    writeHash();
+  }
+
+  // ---------- playback ----------
+  const player = new Audio();
+  player.preload = 'auto';
+  let current = null;
+  let queue = null;
+  let queueIndex = 0;
+
+  function onPlay(e) {
+    const src = e.sample?.file || live.get(e.key);
+    if (!src) {
+      if (apiKey) generateLive(e);
+      else {
+        toast('No sample yet. Run the generator script, or add your key above to preview it live.');
+        $('#live-key')?.focus();
+      }
+      return;
+    }
+    if (current === e && !player.paused) {
+      player.pause();
+      stopQueue();
+      return;
+    }
+    if (current === e && player.paused && player.currentTime > 0 && !player.ended) {
+      player.play().catch(() => {});
+      return;
+    }
+    if (queue && !queue.includes(e)) stopQueue();
+    playEntry(e);
+  }
+
+  function playEntry(e) {
+    const prev = current;
+    current = e;
+    e.loadError = null;
+    player.src = e.sample?.file || live.get(e.key);
+    player.play().catch(err => {
+      if (err.name !== 'AbortError') toast(`Couldn't play this sample: ${err.message}`);
+    });
+    if (prev && prev !== e) syncCard(prev);
+    syncCard(e);
+  }
+
+  player.addEventListener('play', () => current && syncCard(current));
+  player.addEventListener('pause', () => current && syncCard(current));
+  player.addEventListener('timeupdate', () => {
+    const ref = current && cardRefs.get(current.key);
+    if (ref && player.duration) ref.progress.style.width = `${(player.currentTime / player.duration) * 100}%`;
+  });
+  player.addEventListener('ended', () => {
+    const ref = current && cardRefs.get(current.key);
+    if (ref) ref.progress.style.width = '0';
+    if (queue) {
+      queueIndex++;
+      if (queueIndex < queue.length) {
+        playEntry(queue[queueIndex]);
+        cardRefs.get(queue[queueIndex].key)?.el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        return;
+      }
+      stopQueue();
+    }
+    if (current) syncCard(current);
+  });
+  player.addEventListener('error', () => {
+    if (!current || !current.sample) return;
+    current.loadError = `Couldn't load ${current.sample.file}. Run the generator again to restore it.`;
+    syncCard(current);
+    if (queue) player.dispatchEvent(new Event('ended'));
+  });
+
+  function stopQueue() {
+    queue = null;
+    $('#play-all').textContent = 'Play all';
+  }
+  $('#play-all').addEventListener('click', () => {
+    if (queue) {
+      stopQueue();
+      player.pause();
+      return;
+    }
+    const list = visibleEntries().filter(e => e.sample || live.has(e.key));
+    if (!list.length) return;
+    queue = list;
+    const start = current ? list.indexOf(current) : -1;
+    queueIndex = start >= 0 && !player.ended ? start : 0;
+    $('#play-all').textContent = 'Stop';
+    playEntry(queue[queueIndex]);
+  });
+
+  // ---------- live previews ----------
+  async function generateLive(e) {
+    if (pendingLive.has(e.key)) return;
+    pendingLive.add(e.key);
+    e.liveError = null;
+    syncCard(e);
+    try {
+      const body = { model: e.model.id, input: e.text, response_format: C.responseFormat(e.model.id, 'mp3') };
+      if (e.voice) body.voice = e.voice;
+      let res;
+      let ct;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        res = await fetch(`${API}/audio/speech`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        ct = res.headers.get('content-type') || '';
+        if (res.ok && !/json/i.test(ct)) break;
+        const text = await res.text();
+        let message = text.slice(0, 200) || `HTTP ${res.status}`;
+        try { message = JSON.parse(text).error?.message || message; } catch { /* not JSON */ }
+        // A model that rejects the format names the one it wants, so try once more with that.
+        const wanted = res.status === 400 && C.learnFormatFromError(e.model.id, message);
+        if (wanted && wanted !== body.response_format && attempt === 0) { body.response_format = wanted; continue; }
+        throw new Error(res.status === 401 ? `${message}. Check your key.` : message);
+      }
+      let blob = await res.blob();
+      const isPcm = /pcm|l16/i.test(ct) || (body.response_format === 'pcm' && !/audio\/(mpeg|mp3|wav|x-wav|ogg|flac|aac)/i.test(ct));
+      if (isPcm) blob = pcmToWav(await blob.arrayBuffer(), +(ct.match(/rate=(\d+)/) || [])[1] || 24000);
+      live.set(e.key, URL.createObjectURL(blob));
+      pendingLive.delete(e.key);
+      playEntry(e);
+      $('#play-all').disabled = false;
+    } catch (err) {
+      e.liveError = err.message;
+    } finally {
+      pendingLive.delete(e.key);
+      syncCard(e);
+    }
+  }
+
+  function pcmToWav(bytes, rate) {
+    const len = bytes.byteLength - (bytes.byteLength % 2);
+    const v = new DataView(new ArrayBuffer(44));
+    const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+    w(0, 'RIFF'); v.setUint32(4, 36 + len, true); w(8, 'WAVE'); w(12, 'fmt ');
+    v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, rate, true);
+    v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, len, true);
+    return new Blob([v, new Uint8Array(bytes, 0, len)], { type: 'audio/wav' });
+  }
+
+  // ---------- wiring ----------
+  function wire() {
+    $('#f-provider').addEventListener('change', e => {
+      filters.provider = e.target.value;
+      const m = models.find(x => x.id === filters.model);
+      if (m && filters.provider !== 'all' && providerOf(m.id) !== filters.provider) filters.model = 'all';
+      update();
+    });
+    $('#f-model').addEventListener('change', e => {
+      filters.model = e.target.value;
+      if (filters.model !== 'all') filters.provider = providerOf(filters.model);
+      update();
+    });
+    $('#f-lang').addEventListener('change', e => { filters.lang = e.target.value; update(); });
+    $('#f-multi').addEventListener('change', e => { filters.multi = e.target.checked; update(); });
+    $('#f-status').addEventListener('change', e => { filters.status = e.target.value; update(); });
+    let qTimer;
+    $('#f-q').addEventListener('input', e => {
+      clearTimeout(qTimer);
+      qTimer = setTimeout(() => { filters.q = e.target.value.trim(); renderControls(); renderResults(); writeHash(); }, 150);
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !player.paused) { player.pause(); stopQueue(); }
+    });
+  }
+
+  async function init() {
+    wire();
+    apiKey = localStorageKey();
+    if (!C) {
+      $('#model-count').textContent = 'Voices unavailable';
+      $('#summary').textContent = '';
+      $('#results').replaceChildren(h('div', { class: 'load-error' }, 'voice-catalog.js did not load. Keep it next to voices.html.'));
+      return;
+    }
+    try {
+      await loadModels();
+    } catch (e) {
+      $('#model-count').textContent = 'Voices unavailable';
+      $('#summary').textContent = '';
+      $('#results').replaceChildren(h('div', { class: 'load-error' },
+        `Couldn't load the speech model list from OpenRouter (${e.message}). `,
+        h('button', { type: 'button', onclick: () => location.reload() }, 'Try again')));
+      return;
+    }
+    const sampled = entries.filter(e => e.sample).length;
+    $('#model-count').textContent = `${entries.length.toLocaleString()} voices · ${sampled.toLocaleString()} sampled`;
+    readHash();
+    renderControls();
+    renderCoverage();
+    renderResults();
+    writeHash();
+    // Back/forward or an edited URL: follow the new filters. (replaceState doesn't fire this.)
+    window.addEventListener('hashchange', () => { readHash(); update(); });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

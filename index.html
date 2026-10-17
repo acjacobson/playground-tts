@@ -100,6 +100,10 @@
   .brand { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 750; letter-spacing: 0.18em; }
   .onair { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
   .badge { font-size: 12px; border: 1px solid var(--line-strong); border-radius: 999px; padding: 4px 11px; color: var(--muted); background: var(--card); }
+  .nav { display: flex; gap: 3px; background: var(--sunken); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+  .nav a { text-decoration: none; color: var(--muted); font-size: 13px; font-weight: 650; padding: 5px 12px; border-radius: 7px; }
+  .nav a:hover { color: var(--ink); }
+  .nav a[aria-current="page"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgb(0 0 0 / 6%); }
   header { margin: 30px 0 26px; max-width: 760px; }
   .lede { color: var(--muted); font-size: 16px; }
 
@@ -263,6 +267,10 @@
 <div class="shell">
   <div class="top">
     <div class="brand"><span class="onair" aria-hidden="true"></span>TTS PLAYGROUND</div>
+    <nav class="nav" aria-label="Pages">
+      <a href="index.html" aria-current="page">Playground</a>
+      <a href="voices.html">Voices</a>
+    </nav>
     <span class="badge" id="model-count">Loading models…</span>
   </div>
 
@@ -387,6 +395,7 @@
               <input id="gap" type="number" min="0" max="5000" step="50" value="300">
             </div>
           </div>
+          <p class="hint warn" id="format-hint" hidden></p>
           <p class="hint">Speed is only sent when it isn't 1. Few models support it, and some reject other values with an error. The pause applies only when lines are joined in the browser.</p>
           <label class="check"><input type="checkbox" id="zdr"> Only route to Zero Data Retention endpoints</label>
           <label class="check"><input type="checkbox" id="autoplay" checked> Play new takes automatically</label>
@@ -459,6 +468,8 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <noscript><p style="text-align:center">This playground needs JavaScript.</p></noscript>
 
+<script src="voice-catalog.js"></script>
+<script src="samples/manifest.js"></script>
 <script>
 (() => {
   'use strict';
@@ -805,7 +816,7 @@
     const body = { model, input };
     if (voice && !refs) body.voice = voice;
     if (instructions) body.instructions = instructions;
-    body.response_format = state.format;
+    body.response_format = window.VoiceCatalog ? VoiceCatalog.responseFormat(model, state.format) : state.format;
     const speed = +state.speed;
     if (speed > 0 && speed !== 1) body.speed = speed;
     const provider = {};
@@ -1126,6 +1137,19 @@
     }
   }
 
+  // Some models only return one format and say so in a 400. Retry once in that format; the
+  // catalog remembers it, so later requests (and the request preview) use it straight away.
+  async function callSpeechInAnyFormat(body, signal) {
+    try {
+      return await callSpeech(body, signal);
+    } catch (e) {
+      const wanted = e.status === 400 && window.VoiceCatalog?.learnFormatFromError(body.model, e.message);
+      if (!wanted || wanted === body.response_format) throw e;
+      refresh();
+      return callSpeech({ ...body, response_format: wanted }, signal);
+    }
+  }
+
   async function fetchCost(genId) {
     for (const wait of [800, 1500, 3000, 5000, 8000]) {
       await sleep(wait);
@@ -1213,7 +1237,7 @@
     if (n > 1) ui.progress(`Generating ${n} lines…`);
     try {
       const results = await mapLimit(clip.requests, 3, async body => {
-        const r = await callSpeech(body, ac.signal);
+        const r = await callSpeechInAnyFormat(body, ac.signal);
         done++;
         if (n > 1) ui.progress(`Generated ${done} of ${n} lines…`);
         return r;
@@ -1290,18 +1314,19 @@
         status.className = 'clip-status error';
         status.replaceChildren(h('div', {}, message), hint && h('div', { class: 'hint' }, hint));
       },
-      done({ blob, ext, buffer, ms, results }) {
+      done({ blob, url: fileUrl, size, ext, buffer, ms, results }) {
         status.remove();
-        const url = URL.createObjectURL(blob);
-        objectUrls.add(url);
+        const url = fileUrl || URL.createObjectURL(blob);
+        if (!fileUrl) objectUrls.add(url);
+        const bytes = blob ? blob.size : size;
         const audio = h('audio', { controls: true, preload: 'auto', src: url });
         const providers = [...new Set(results.map(r => r.provider).filter(Boolean))].join(', ');
         costEl = h('span', { title: 'Actual cost reported by OpenRouter' }, 'cost…');
         const guessed = results.some(r => r.rateGuessed);
         const meta = h('div', { class: 'clip-meta' },
           buffer && h('span', {}, fmtDur(buffer.duration)),
-          h('span', {}, fmtBytes(blob.size)),
-          h('span', { title: 'Time from request to finished audio' }, `${(ms / 1000).toFixed(1)} s`),
+          bytes > 0 && h('span', {}, fmtBytes(bytes)),
+          ms != null && h('span', { title: 'Time from request to finished audio' }, `${(ms / 1000).toFixed(1)} s`),
           providers && h('span', {}, providers),
           costEl,
           guessed && h('span', { title: 'The response did not state a sample rate' }, 'PCM read as 24 kHz'),
@@ -1329,13 +1354,26 @@
     run(buildPlan(), structuredClone(state));
   }
 
+  // Plays the saved sample from samples/ when there is one, so trying a voice is instant and free.
   function audition(model, voice) {
-    const { name } = voiceParts(voice || '');
-    const spoken = /^[A-Za-z]+$/.test(name) ? name : '';
-    const text = providerOf(model) === 'bytedance-seed'
-      ? 'A friendly narrator says: "Hi! This is a quick sample of my voice."'
-      : `Hi${spoken ? `, I'm ${spoken}` : '!'}. This is a quick sample of how I sound.`;
+    const catalog = window.VoiceCatalog;
+    const saved = catalog && window.VOICE_SAMPLES?.samples?.[catalog.sampleKey(model, voice)];
+    if (saved) { playSavedSample(model, voice, saved); return; }
+    const text = catalog ? catalog.sampleText(model, voice) : 'Hi! This is a quick sample of how I sound.';
     run({ kind: 'Voice audition', gap: 0, clips: [{ model, voice, requests: [bodyFor({ model, input: text, voice })] }] }, null);
+  }
+
+  async function playSavedSample(model, voice, saved) {
+    hideFormError();
+    const [ui] = createTake({ kind: 'Saved voice sample', clips: [{ model, voice }] }, null);
+    let buffer = null;
+    try {
+      const res = await fetch(saved.file);
+      if (res.ok) buffer = await decodeAudio({ kind: 'file', bytes: await res.arrayBuffer() });
+    } catch { /* pages opened from disk can't fetch local files, so there is no waveform */ }
+    const audio = ui.done({ url: saved.file, size: saved.bytes, ext: saved.file.split('.').pop(), buffer, results: [{ provider: saved.provider }] });
+    ui.cost(null);
+    if (state.autoplay) audio.play().catch(() => {});
   }
 
   function restore(snapshot, takeEl) {
@@ -1461,7 +1499,7 @@
     const desc = (m.description || '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
     const tips = tipsFor(m.id);
     $('#model-link').href = `https://openrouter.ai/${m.id}`;
-    box.replaceChildren(
+    box.replaceChildren(...[
       desc && h('p', { class: 'model-desc' }, desc),
       h('div', { class: 'model-id' }, m.id),
       h('div', { class: 'chips' },
@@ -1472,7 +1510,8 @@
         c.bracketDelivery && h('span', { class: 'chip on' }, 'Inline audio tags'),
         c.cloning && h('span', { class: 'chip on' }, 'Voice cloning'),
         c.prompt && h('span', { class: 'chip on' }, 'Prompt-driven audio')),
-      tips.length && h('ul', { class: 'tips' }, tips.map(t => h('li', {}, t))));
+      tips.length > 0 && h('ul', { class: 'tips' }, tips.map(t => h('li', {}, t))),
+    ].filter(Boolean));
   }
 
   function labeled(text, control, cls) {
@@ -1654,6 +1693,14 @@
       : c.bracketDelivery
         ? 'Delivery styles are sent as inline [tags] at the start of each line.'
         : `${shortName(m)} ignores delivery styles. Lines are spoken as written.`;
+
+    const pcmModels = [...new Set((s.mode === 'compare' ? s.compare.map(r => r.model) : [s.model])
+      .filter(id => window.VoiceCatalog && VoiceCatalog.responseFormat(id, s.format) !== s.format))];
+    const formatHint = $('#format-hint');
+    formatHint.hidden = !pcmModels.length;
+    formatHint.textContent = pcmModels.length
+      ? `${pcmModels.map(modelLabel).join(', ')} only ${pcmModels.length === 1 ? 'returns' : 'return'} PCM, so ${pcmModels.length === 1 ? 'it is' : 'they are'} always requested as PCM and saved as WAV.`
+      : '';
 
     const po = parseProviderOptions();
     const poHint = $('#po-hint');
