@@ -172,6 +172,25 @@
   .cmp-row { display: grid; grid-template-columns: 20px minmax(0, 1.2fr) minmax(0, 1fr) auto; gap: 10px; align-items: end; padding: 10px 0; border-bottom: 1px solid var(--line); }
   .cmp-n { font-weight: 700; color: var(--muted); font-size: 12px; margin-bottom: 11px; }
 
+  /* Writer */
+  .writer { border: 1px solid var(--line); background: var(--sunken); border-radius: 12px; padding: 12px; margin-bottom: 16px; }
+  .writer-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .writer-title { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+  .writer-title .spark { color: var(--accent); }
+  .writer-model { font: 11.5px var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .writer-row { display: flex; gap: 8px; }
+  .writer-row input { flex: 1; min-width: 0; }
+  .writer-row button { flex: none; min-width: 74px; }
+  .writer-go { border-color: var(--accent); color: var(--accent); }
+  .writer-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 8px; }
+  .writer-opts select { width: auto; min-height: 30px; padding: 3px 8px; font-size: 12.5px; }
+  .seg { display: inline-flex; gap: 2px; background: var(--field); border: 1px solid var(--line-strong); border-radius: 8px; padding: 2px; }
+  .seg button { border: 0; background: transparent; padding: 3px 10px; font-size: 12.5px; font-weight: 600; color: var(--muted); border-radius: 6px; }
+  .seg button:hover:not(:disabled) { background: var(--sunken); color: var(--ink); }
+  .seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--ink); }
+  .writer-status { font-size: 12.5px; color: var(--muted); margin: 8px 0 0; }
+  .writer-status.bad { color: var(--err); }
+
   /* Reference clip */
   .ref-box { border: 1px dashed var(--line-strong); border-radius: 12px; padding: 12px; }
   .ref-box audio { margin-top: 8px; }
@@ -314,6 +333,29 @@
             <div id="single-voice"></div>
             <p class="hint" id="voice-hint"></p>
           </div>
+          <div data-writer-slot="single">
+            <div class="writer" id="writer">
+              <div class="writer-head">
+                <span class="writer-title"><span class="spark" aria-hidden="true">✦</span><span id="writer-title">Write it for me</span></span>
+                <span class="writer-model" id="writer-model-label" title="Change the writing model under Advanced options"></span>
+              </div>
+              <div class="writer-row">
+                <input id="writer-prompt" type="text" autocomplete="off" aria-label="What should it say?" placeholder="What should it say? e.g. a cosy weather forecast for a stormy weekend">
+                <button type="button" class="writer-go" id="writer-go">Write</button>
+              </div>
+              <div class="writer-opts">
+                <div class="seg" role="group" aria-label="Length">
+                  <button type="button" data-len="short" aria-pressed="false">Short</button>
+                  <button type="button" data-len="medium" aria-pressed="true">Medium</button>
+                  <button type="button" data-len="long" aria-pressed="false">Long</button>
+                </div>
+                <select id="writer-lang" aria-label="Language to write in"></select>
+                <button type="button" class="ghost small" id="writer-surprise">Surprise me</button>
+                <button type="button" class="ghost small" id="writer-undo" hidden>Undo</button>
+              </div>
+              <p class="writer-status" id="writer-status" role="status" hidden></p>
+            </div>
+          </div>
           <div class="field">
             <label for="instructions">Style instructions <span class="opt">optional</span></label>
             <input id="instructions" type="text" placeholder="e.g. warm and unhurried, like a late-night radio host">
@@ -348,6 +390,7 @@
           <button type="button" class="small add-row" id="add-speaker">+ Add speaker</button>
 
           <h3>Script</h3>
+          <div data-writer-slot="conversation"></div>
           <div class="field" style="margin-bottom:6px">
             <label for="conv-instr">Overall direction <span class="opt">optional, used for lines with no delivery set</span></label>
             <input id="conv-instr" type="text" placeholder="e.g. a fast-paced, playful podcast">
@@ -365,7 +408,8 @@
           <p class="hint" style="margin-top:0">Send the same text to several models at once. Each row picks its own model and voice, and all rows run in parallel.</p>
           <div id="compare-rows"></div>
           <button type="button" class="small add-row" id="add-compare">+ Add model</button>
-          <div class="field" style="margin-top:18px">
+          <div data-writer-slot="compare" style="margin-top:18px"></div>
+          <div class="field">
             <label for="cmp-instructions">Style instructions <span class="opt">optional, only some models use them</span></label>
             <input id="cmp-instructions" type="text" placeholder="e.g. warm and unhurried, like a late-night radio host">
           </div>
@@ -403,6 +447,11 @@
             <label for="provider-options">Provider options <span class="opt">JSON, sent as <code>provider.options</code></span></label>
             <textarea id="provider-options" rows="3" spellcheck="false" style="font-family:var(--mono);font-size:12.5px;min-height:70px" placeholder='{"google-ai-studio": {"temperature": 0.7}}'></textarea>
             <p class="hint" id="po-hint">Keyed by provider slug. Only the matching provider's options are forwarded.</p>
+          </div>
+          <div class="field" style="margin-top:14px;margin-bottom:0">
+            <label for="writer-model">Writing model <span class="opt">used by "Write it for me"</span></label>
+            <input id="writer-model" type="text" spellcheck="false" autocomplete="off" style="font-family:var(--mono);font-size:12.5px" placeholder="anthropic/claude-haiku-5.5">
+            <p class="hint">Any OpenRouter chat model ID. It uses the same key.</p>
           </div>
         </details>
 
@@ -478,6 +527,7 @@
   const DEFAULT_MODEL = 'google/gemini-3.8-flash-tts';
   const COMPARE_PICKS = ['elevenlabs/eleven-v4', 'minimax/speech-2.8-hd', 'microsoft/mai-voice-2.1', 'hexgrad/kokoro-82m', 'x-ai/grok-voice-tts-1.0', 'deepgram/aura-2'];
   const KEY_STORAGE = 'openrouter-tts-playground.key';
+  const DEFAULT_WRITER_MODEL = 'anthropic/claude-haiku-5.5';
   const SPEAKER_COLORS = ['#c2410c', '#2563eb', '#059669', '#9333ea', '#ca8a04', '#db2777'];
   const MAX_REF_BYTES = 15 * 1024 * 1024;
 
@@ -725,6 +775,10 @@
       zdr: false,
       autoplay: true,
       providerOptions: '',
+      writerPrompt: '',
+      writerLength: 'medium',
+      writerLang: 'auto',
+      writerModel: DEFAULT_WRITER_MODEL,
     };
   }
   let state = defaults();
@@ -761,6 +815,7 @@
       ci: s.convInstructions, st: s.stitch ? 1 : 0,
       cm: s.compare.map(r => [r.model, r.voice]),
       f: s.format, sp: s.speed, g: s.gapMs, z: s.zdr ? 1 : 0, ap: s.autoplay ? 1 : 0, po: s.providerOptions,
+      wp: s.writerPrompt, wl: s.writerLength, wg: s.writerLang, wm: s.writerModel,
     }));
   }
   function decodeState(str) {
@@ -786,6 +841,10 @@
       zdr: !!o.z,
       autoplay: o.ap !== 0,
       providerOptions: asStr(o.po, ''),
+      writerPrompt: asStr(o.wp, ''),
+      writerLength: ['short', 'medium', 'long'].includes(o.wl) ? o.wl : 'medium',
+      writerLang: asStr(o.wg, 'auto'),
+      writerModel: asStr(o.wm, DEFAULT_WRITER_MODEL) || DEFAULT_WRITER_MODEL,
     };
   }
   function readHash() {
@@ -1386,6 +1445,325 @@
     $('#compose-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  // ---------- writer: sample text from a chat model ----------
+  const WRITER_LANGS = ['en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'sv', 'da', 'nb', 'fi', 'cs', 'hu', 'ro', 'ru', 'uk', 'tr', 'el', 'ar', 'he', 'hi', 'ja', 'ko', 'zh', 'id', 'vi', 'th'];
+  // [description sent to the model, max_tokens]
+  const WRITER_LENGTHS = {
+    single: { short: ['one or two sentences', 200], medium: ['about 70 words, roughly 30 seconds read aloud', 500], long: ['about 180 words, a little over a minute read aloud', 1100] },
+    conversation: { short: [4, 500], medium: [8, 1000], long: [14, 1700] },
+  };
+  const MONOLOGUE_IDEAS = [
+    'a nature documentary narrator describing a very dramatic snail race',
+    'an airport announcement for the first passenger flight to the Moon',
+    'the opening of a bedtime story about a lighthouse cat',
+    'a sports commentator calling the final seconds of a chess match',
+    'a radio ad for a bakery that only sells croissants',
+    'a museum audio guide describing a painting of a very ordinary chair',
+    'a weather forecast from an extremely dramatic weather presenter',
+    'a pep talk for people who just missed their bus',
+    'the first lines of a detective novel set in a supermarket',
+    'a meditation guide who keeps getting distracted by snacks',
+    'a castle tour guide welcoming visitors to a slightly haunted castle',
+    'a cooking show host revealing a secret family recipe for toast',
+  ];
+  const DIALOGUE_IDEAS = [
+    'two friends planning a surprise party that keeps going wrong',
+    'a nervous job interview at a company that makes rubber ducks',
+    'two astronauts arguing about who forgot the snacks',
+    'a customer returning a time machine that only goes to Tuesdays',
+    'two podcast hosts reviewing a very average sandwich',
+    'a detective questioning a suspiciously calm cat owner',
+    'neighbours negotiating over a lemon tree that drops fruit into the wrong garden',
+    'a tech support call with someone whose toaster has opinions',
+  ];
+  let writerAc = null;
+  let writerUndo = null;
+
+  const langName = code => (window.VoiceCatalog ? VoiceCatalog.languageName(code) : code);
+  const castLabel = (c, i) => c.name.trim() || `Speaker ${i + 1}`;
+  const listJoin = items => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`);
+
+  // The language the chosen voices speak, when their IDs name one (null for multilingual voices).
+  function voiceLanguage() {
+    if (!window.VoiceCatalog) return null;
+    const pairs = state.mode === 'conversation' ? state.cast.map(c => [state.model, c.voice])
+      : state.mode === 'compare' ? state.compare.map(r => [r.model, r.voice])
+        : [[state.model, state.voice]];
+    const langs = [...new Set(pairs.map(([m, v]) => VoiceCatalog.voiceInfo(m, v.trim()).lang).filter(Boolean))];
+    return langs.length === 1 ? langs[0] : null;
+  }
+  function writerLanguage() {
+    if (state.writerLang !== 'auto') return langName(state.writerLang);
+    const lang = voiceLanguage();
+    return lang ? langName(lang) : null;
+  }
+
+  // The prompt follows what the selected speech model does with directions in the text.
+  function writerRequest() {
+    const s = state;
+    const conversation = s.mode === 'conversation';
+    const model = s.mode === 'compare' ? '' : s.model;
+    const c = model ? caps(model) : {};
+    const fish = model && providerOf(model) === 'fish-audio';
+    const lang = writerLanguage();
+    const system = [
+      'You write scripts that a text-to-speech model will read aloud.',
+      'Write for the ear: natural spoken sentences, punctuation that sets the pacing, and numbers, symbols, abbreviations and web addresses written out the way a speaker would say them.',
+      'Use plain text only: no title, no markdown, no lists, no emoji, and no quotation marks around the whole reply.',
+      lang ? `Write in ${lang}.` : 'Write in the language the request is written in. If that is unclear, write in English.',
+    ];
+    let style = false;
+    if (conversation) {
+      const names = s.cast.map(castLabel);
+      const [turns] = WRITER_LENGTHS.conversation[s.writerLength];
+      system.push(
+        `Write a dialogue between ${listJoin(names)}, about ${turns} turns long.`,
+        'Write one turn per line, in the form "Name [delivery]: words". The delivery says how the line is spoken, in two to six words.',
+        `Use only these names, spelled exactly like this: ${names.join(', ')}. Write nothing before or after the dialogue.`,
+        c.bracketDelivery || fish
+          ? 'You may add an occasional sound tag such as [laughs] or [sighs] inside the words.'
+          : 'Put no directions or sound effects inside the words. The delivery covers that.');
+    } else {
+      system.push(`Length: ${WRITER_LENGTHS.single[s.writerLength][0]}.`);
+      if (c.prompt) system.push("This model reads a prompt rather than a script. In one or two sentences describe the speaker's voice, manner and setting, including any background sound, then give the words they say in double quotation marks.");
+      else if (c.bracketDelivery) system.push('This voice model understands inline audio tags in square brackets, such as [whispers], [laughs], [sighs] or [excited]. Use two to four where they improve the performance, and no other directions.');
+      else if (fish) system.push('This voice model takes delivery directions in square brackets before a sentence, such as [whispering] or [nervous, speaking quickly]. Use two to four, and no other directions.');
+      else if (c.instructions) {
+        style = true;
+        system.push('The voice model reads the text word for word, so put no directions in it. Instead, start your reply with one line in the form "Style: <how to perform it, in under 15 words>", then a blank line, then the text.');
+      } else system.push('The voice model reads every word aloud, so put no directions, brackets or sound effects in the text.');
+    }
+    const topic = s.writerPrompt.trim();
+    const user = topic ? `Write this: ${topic}`
+      : conversation ? 'Write a short, lively scene of your choice.' : 'Write something of your choice that shows off an expressive voice.';
+    const maxTokens = (conversation ? WRITER_LENGTHS.conversation : WRITER_LENGTHS.single)[s.writerLength][1];
+    return { system: system.join('\n'), user, style, conversation, maxTokens, prompt: !!c.prompt };
+  }
+
+  // Reads an OpenRouter chat completion stream (server-sent events), passing each piece of text to onText.
+  async function streamChat(body, signal, onText) {
+    const res = await fetch(`${API}/chat/completions`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...body, stream: true }),
+      signal,
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      let message = text.slice(0, 300) || `HTTP ${res.status}`;
+      try { message = JSON.parse(text).error?.message || message; } catch { /* not JSON */ }
+      throw new ApiError(res.status, message);
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let usage = null;
+    let finish = null;
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let nl;
+      while ((nl = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.slice(0, nl).trim();
+        buffer = buffer.slice(nl + 1);
+        if (!line.startsWith('data:')) continue; // blank lines and ": OPENROUTER PROCESSING" keep-alives
+        const data = line.slice(5).trim();
+        if (data === '[DONE]') return { usage, finish };
+        let chunk;
+        try { chunk = JSON.parse(data); } catch { continue; }
+        if (chunk.error) throw new ApiError(chunk.error.code || 500, chunk.error.message || 'The model stopped with an error.');
+        const choice = chunk.choices?.[0];
+        if (choice?.delta?.content) onText(choice.delta.content);
+        if (choice?.finish_reason) finish = choice.finish_reason;
+        if (chunk.usage) usage = chunk.usage;
+      }
+    }
+    return { usage, finish };
+  }
+
+  // "Maya [excited]: words", tolerating parentheses, bold markers and full-width colons.
+  function parseTurn(line) {
+    const m = line.match(/^\s*\**\s*([^[\]():*\n]{1,40}?)\s*\**\s*(?:[[(]([^\])]*)[\])])?\s*\**\s*[:：]\s*(.+?)\s*$/);
+    if (!m || !m[3].trim()) return null;
+    return { name: m[1].trim(), delivery: (m[2] || '').trim(), text: m[3].trim() };
+  }
+  function speakerFor(name, index) {
+    const n = name.toLowerCase();
+    const labels = state.cast.map((c, i) => castLabel(c, i).toLowerCase());
+    let i = labels.indexOf(n);
+    if (i < 0) i = labels.findIndex(l => n.startsWith(l) || l.startsWith(n));
+    return state.cast[i >= 0 ? i : index % state.cast.length].id;
+  }
+  function cleanSpoken(text, keepQuotes) {
+    let t = text.trim();
+    if (!keepQuotes && /^["“„«]/.test(t) && /["”“»]$/.test(t) && !/["“”„«»]/.test(t.slice(1, -1))) t = t.slice(1, -1).trim();
+    return t;
+  }
+
+  function setWriterStatus(text, bad) {
+    const el = $('#writer-status');
+    el.textContent = text || '';
+    el.hidden = !text;
+    el.classList.toggle('bad', !!bad);
+  }
+  function syncComposeFields() {
+    $('#text').value = $('#cmp-text').value = state.text;
+    $('#instructions').value = $('#cmp-instructions').value = state.instructions;
+  }
+
+  async function runWriter() {
+    if (writerAc) { writerAc.abort(); return; } // the button reads Stop while writing
+    if (!apiKey) {
+      setWriterStatus('Add your OpenRouter API key in Connection first.', true);
+      $('#key').focus();
+      return;
+    }
+    const req = writerRequest();
+    const model = (state.writerModel || DEFAULT_WRITER_MODEL).trim();
+    writerUndo = { text: state.text, instructions: state.instructions, lines: structuredClone(state.lines) };
+    $('#writer-undo').hidden = true;
+    const ac = new AbortController();
+    writerAc = ac;
+    renderWriter();
+    setWriterStatus(`Writing with ${model}…`);
+    let full = '';
+    let shownLines = -1;
+
+    const apply = final => {
+      if (req.conversation) {
+        const rows = full.split('\n');
+        const turns = (final ? rows : rows.slice(0, -1)).map(parseTurn).filter(Boolean);
+        if (turns.length === shownLines) return;
+        shownLines = turns.length;
+        state.lines = turns.map((t, i) => ({ id: state.lines[i]?.id || uid(), speaker: speakerFor(t.name, i), delivery: t.delivery, text: t.text }));
+        renderLines();
+      } else {
+        let text = full;
+        if (req.style) {
+          const head = full.match(/^\s*style\s*[:\-–]\s*([^\n]*)\n/i) || (final && full.match(/^\s*style\s*[:\-–]\s*([^\n]*)$/i));
+          if (head) {
+            state.instructions = head[1].trim();
+            text = full.slice(head[0].length);
+          } else if (!final && !full.includes('\n') && /^\s*s(t(y(l(e(\s*[:\-–].*)?)?)?)?)?$/i.test(full)) {
+            text = ''; // still reading the "Style:" line
+          }
+        }
+        state.text = final ? cleanSpoken(text, req.prompt) : text.replace(/^\s+/, '');
+        syncComposeFields();
+      }
+      refresh();
+    };
+
+    try {
+      const { usage, finish } = await streamChat({
+        model,
+        messages: [{ role: 'system', content: req.system }, { role: 'user', content: req.user }],
+        max_tokens: req.maxTokens,
+        reasoning: { enabled: false },
+      }, ac.signal, piece => { full += piece; apply(false); });
+      apply(true);
+      if (!full.trim()) throw new Error('The model returned no text. Try again.');
+      if (req.conversation && !state.lines.length) {
+        restoreWriterUndo();
+        throw new Error('The reply was not a dialogue in the "Name [delivery]: words" form. Try again.');
+      }
+      const parts = [`Written by ${model}`];
+      if (usage?.completion_tokens) parts.push(`${usage.completion_tokens} tokens`);
+      if (usage?.cost != null) parts.push(fmtCost(+usage.cost));
+      if (finish === 'length') parts.push('cut off at the length limit');
+      setWriterStatus(parts.join(' · '));
+      $('#writer-undo').hidden = !writerUndo;
+    } catch (e) {
+      if (e.name === 'AbortError') {
+        apply(true);
+        setWriterStatus('Stopped. What was written so far is kept.');
+        $('#writer-undo').hidden = !writerUndo;
+      } else {
+        setWriterStatus(writerError(e, model), true);
+        $('#writer-undo').hidden = !(writerUndo && full);
+      }
+    } finally {
+      writerAc = null;
+      renderWriter();
+    }
+  }
+
+  function writerError(e, model) {
+    const msg = e.message.replace(/\.\s*$/, '');
+    if (e.status === 401) return `${msg}. Check your API key.`;
+    if (e.status === 402) return `${msg}. Your OpenRouter account needs more credits.`;
+    if ((e.status === 400 || e.status === 404) && /model/i.test(msg)) return `${msg}. Check the writing model ("${model}") under Advanced options.`;
+    if (e.status === 429) return 'Rate limited. Wait a moment and try again.';
+    return e.message;
+  }
+
+  function restoreWriterUndo() {
+    if (!writerUndo) return;
+    state.text = writerUndo.text;
+    state.instructions = writerUndo.instructions;
+    state.lines = writerUndo.lines;
+    writerUndo = null;
+    $('#writer-undo').hidden = true;
+    syncComposeFields();
+    renderLines();
+    refresh();
+  }
+
+  function placeWriter() {
+    const slot = $(`[data-writer-slot="${state.mode}"]`);
+    if (slot && $('#writer').parentElement !== slot) slot.append($('#writer'));
+  }
+
+  function renderWriter() {
+    const conversation = state.mode === 'conversation';
+    const busy = !!writerAc;
+    $('#writer-title').textContent = conversation ? 'Write the script for me' : 'Write it for me';
+    $('#writer-prompt').placeholder = conversation
+      ? 'What is the scene? e.g. two chefs arguing about pineapple on pizza'
+      : 'What should it say? e.g. a cosy weather forecast for a stormy weekend';
+    $('#writer-model-label').textContent = (state.writerModel || DEFAULT_WRITER_MODEL).trim();
+    $('#writer-go').textContent = busy ? 'Stop' : 'Write';
+    $('#writer-surprise').disabled = busy;
+    const lengths = conversation ? WRITER_LENGTHS.conversation : WRITER_LENGTHS.single;
+    document.querySelectorAll('#writer .seg button').forEach(b => {
+      b.setAttribute('aria-pressed', String(b.dataset.len === state.writerLength));
+      b.title = conversation ? `About ${lengths[b.dataset.len][0]} lines` : cap(lengths[b.dataset.len][0]);
+    });
+    const auto = $('#writer-lang option[value="auto"]');
+    if (auto) {
+      const lang = voiceLanguage();
+      auto.textContent = lang ? `Match the voice (${langName(lang)})` : 'Match the request';
+    }
+    $('#writer-lang').value = state.writerLang;
+  }
+  const cap = str => str.charAt(0).toUpperCase() + str.slice(1);
+
+  function wireWriter() {
+    const langSel = $('#writer-lang');
+    langSel.append(
+      h('option', { value: 'auto' }, 'Match the voice'),
+      ...WRITER_LANGS.map(code => [code, langName(code)]).sort((a, b) => a[1].localeCompare(b[1])).map(([code, name]) => h('option', { value: code }, name)));
+    langSel.addEventListener('change', e => { state.writerLang = e.target.value; refresh(); });
+    $('#writer-prompt').addEventListener('input', e => { state.writerPrompt = e.target.value; scheduleHash(); });
+    $('#writer-prompt').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey) { e.preventDefault(); runWriter(); }
+    });
+    $('#writer-go').addEventListener('click', runWriter);
+    $('#writer-undo').addEventListener('click', () => { restoreWriterUndo(); setWriterStatus('Put back the text from before.'); });
+    $('#writer-surprise').addEventListener('click', () => {
+      if (writerAc) return;
+      const ideas = state.mode === 'conversation' ? DIALOGUE_IDEAS : MONOLOGUE_IDEAS;
+      let idea = ideas[Math.floor(Math.random() * ideas.length)];
+      if (idea === state.writerPrompt) idea = ideas[(ideas.indexOf(idea) + 1) % ideas.length];
+      state.writerPrompt = idea;
+      $('#writer-prompt').value = idea;
+      runWriter();
+    });
+    document.querySelectorAll('#writer .seg button').forEach(b => b.addEventListener('click', () => { state.writerLength = b.dataset.len; refresh(); }));
+    $('#writer-model').addEventListener('input', e => { state.writerModel = e.target.value.trim() || DEFAULT_WRITER_MODEL; refresh(); });
+  }
+
   // ---------- UI: voice picker ----------
   let pickerCount = 0;
   function voicePicker({ value = '', model, onChange, onAudition, labelledBy }) {
@@ -1644,6 +2022,7 @@
     $('#model-card').hidden = mode === 'compare';
     if (mode === 'compare' && !state.compare.length && models.length) seedCompare();
     if (mode === 'conversation' && !state.lines.length) state.lines = exampleLines();
+    placeWriter();
     $('#text').value = $('#cmp-text').value = state.text;
     $('#instructions').value = $('#cmp-instructions').value = state.instructions;
     renderCompare();
@@ -1789,6 +2168,7 @@
 
   function refresh() {
     renderHints();
+    renderWriter();
     renderEstimate();
     scheduleHood();
     scheduleHash();
@@ -1805,6 +2185,8 @@
     $('#zdr').checked = state.zdr;
     $('#autoplay').checked = state.autoplay;
     $('#provider-options').value = state.providerOptions;
+    $('#writer-prompt').value = state.writerPrompt;
+    $('#writer-model').value = state.writerModel === DEFAULT_WRITER_MODEL ? '' : state.writerModel;
     singleVoice.set(state.voice);
     singleVoice.sync();
     renderModelInfo();
@@ -1834,6 +2216,7 @@
 
   // ---------- wiring ----------
   function wire() {
+    wireWriter();
     singleVoice = voicePicker({
       model: () => state.model,
       labelledBy: 'single-voice-label',
