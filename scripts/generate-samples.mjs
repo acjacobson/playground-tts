@@ -23,6 +23,8 @@ Options:
   --yes              Skip the confirmation prompt.
   --provider=a,b     Only these providers, e.g. --provider=elevenlabs,google
   --model=id,id      Only these model IDs, e.g. --model=deepgram/aura-2
+  --german           Only the extra German samples, one per German-capable model that has no
+                     German voice of its own.
   --limit=N          Generate at most N samples in this run.
   --concurrency=N    Requests in parallel (default 4, max 16).
   --force            Regenerate samples that already exist, within the filters above.
@@ -38,7 +40,7 @@ const MANIFEST_PATH = path.join(SAMPLES_DIR, 'manifest.js');
 const AUDIO_EXTS = ['mp3', 'wav', 'ogg', 'flac', 'aac'];
 
 vm.runInThisContext(fs.readFileSync(path.join(ROOT, 'voice-catalog.js'), 'utf8'), { filename: 'voice-catalog.js' });
-const { sampleText, sampleBase, sampleKey, voicesFor, responseFormat, learnFormatFromError } = globalThis.VoiceCatalog;
+const { sampleText, sampleBase, sampleKey, germanSampleVoice, voicesFor, responseFormat, learnFormatFromError } = globalThis.VoiceCatalog;
 
 // ---------- options ----------
 function fail(message) {
@@ -46,7 +48,7 @@ function fail(message) {
   process.exit(1);
 }
 
-const KNOWN_OPTIONS = new Set(['dry-run', 'yes', 'force', 'sync', 'help', 'provider', 'model', 'limit', 'concurrency', 'no-transcode']);
+const KNOWN_OPTIONS = new Set(['dry-run', 'yes', 'force', 'sync', 'help', 'german', 'provider', 'model', 'limit', 'concurrency', 'no-transcode']);
 const opts = { provider: [], model: [] };
 for (const arg of process.argv.slice(2)) {
   const m = arg.match(/^--([a-z-]+)(?:=(.*))?$/);
@@ -309,9 +311,17 @@ async function main() {
   }
   console.log(`${models.length} models.`);
 
-  const targets = models.flatMap(m => voicesFor(m).map(voice => ({
-    model: m, voice, key: sampleKey(m.id, voice), base: sampleBase(m.id, voice), text: sampleText(m.id, voice),
-  })));
+  // Every voice, plus one extra German sample for German-capable models with no German voice of their own.
+  const targets = models.flatMap(m => {
+    const own = voicesFor(m).map(voice => ({
+      model: m, voice, key: sampleKey(m.id, voice), base: sampleBase(m.id, voice), text: sampleText(m.id, voice),
+    }));
+    const de = germanSampleVoice(m);
+    if (de !== null) own.push({
+      model: m, voice: de, lang: 'de', key: sampleKey(m.id, de, 'de'), base: sampleBase(m.id, de, 'de'), text: sampleText(m.id, de, 'de'),
+    });
+    return own;
+  });
   const previous = readManifest();
 
   if (opts.sync) {
@@ -325,7 +335,9 @@ async function main() {
   for (const id of opts.model) if (!models.some(m => m.id === id)) fail(`No speech model called "${id}".`);
   // --provider and --model add up: the named providers plus the named models.
   const filtered = opts.provider.length || opts.model.length;
-  const scoped = targets.filter(t => !filtered || opts.provider.includes(t.model.id.split('/')[0]) || opts.model.includes(t.model.id));
+  const scoped = targets
+    .filter(t => !opts.german || t.lang === 'de')
+    .filter(t => !filtered || opts.provider.includes(t.model.id.split('/')[0]) || opts.model.includes(t.model.id));
   const todo = scoped.filter(t => opts.force || !existingFile(t.base)).slice(0, limit);
 
   // Summary per model
@@ -344,7 +356,7 @@ async function main() {
   const pending = [...rows].filter(([, r]) => r.todo);
   const totalCost = todo.reduce((sum, t) => sum + estimateCost(t.model, t.text), 0);
   const have = scoped.filter(t => existingFile(t.base)).length;
-  console.log(`${have} of ${scoped.length} voices${opts.provider.length || opts.model.length ? ' in scope' : ''} already have samples.`);
+  console.log(`${have} of ${scoped.length} voices${opts.provider.length || opts.model.length || opts.german ? ' in scope' : ''} already have samples.`);
 
   if (!todo.length) {
     rebuildManifest(targets, previous, new Map(), new Map());
@@ -388,7 +400,7 @@ async function main() {
   async function worker() {
     while (!stopping && next < todo.length) {
       const t = todo[next++];
-      const label = `${t.model.id} · ${t.voice || 'default voice'}`;
+      const label = `${t.model.id} · ${t.voice || 'default voice'}${t.lang ? ` (${t.lang})` : ''}`;
       try {
         const r = await generateOne(t, key);
         results.set(t.key, r);

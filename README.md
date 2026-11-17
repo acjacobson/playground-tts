@@ -63,7 +63,7 @@ Every preset voice from every speech model, each with a short saved sample.
 - Filter by provider, model, language and whether a sample exists, or search by name or voice ID.
 - **Play all** goes through the current list one voice after another.
 - **Use in Playground** opens that model and voice in the Playground.
-- Samples are spoken in the voice's own language when its ID names one. For example, `de-DE-Klaus` introduces himself in German. Multilingual voices, such as Gemini's and ElevenLabs', speak whatever language the text is in, so their samples are in English.
+- Samples are spoken in the voice's own language when its ID names one. For example, `de-DE-Klaus` introduces himself in German. Multilingual voices, such as Gemini's and ElevenLabs', speak whatever language the text is in, so their samples are in English. Models documented to speak German also get one extra German sample on a voice marked "German sample", unless they already have a German voice. `node scripts/generate-samples.mjs --german` makes only those.
 - If OpenRouter adds voices that have no sample yet, the page shows how many are missing and the command that makes them. With a key you can also preview a missing voice live.
 
 ## Generating voice samples

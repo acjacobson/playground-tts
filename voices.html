@@ -211,6 +211,7 @@
   <footer>
     Voices and models come from OpenRouter's <a href="https://openrouter.ai/models?output_modalities=speech" target="_blank" rel="noopener">speech model list</a>.
     Languages are read from voice IDs. "Multilingual" voices speak the language of the text you give them, and their samples are in English.
+    Models documented to speak German also have one German sample, on a voice marked "German sample". Which voices sound native in German is not tested.
   </footer>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -330,18 +331,26 @@
     const json = await res.json();
     models = (json.data || []).sort((a, b) => groupName(a).localeCompare(groupName(b)) || (b.created || 0) - (a.created || 0));
     if (!models.length) throw new Error('OpenRouter returned no speech models.');
-    entries = models.flatMap(m => C.voicesFor(m).map(voice => {
-      const key = C.sampleKey(m.id, voice);
+    const entryFor = (m, voice, lang) => {
+      const key = C.sampleKey(m.id, voice, lang);
       const sample = savedSamples[key] || null;
+      const info = C.voiceInfo(m.id, voice);
       return {
-        key, model: m, voice,
-        info: C.voiceInfo(m.id, voice),
-        group: C.languageGroup(m.id, voice),
-        text: sample?.text || C.sampleText(m.id, voice),
+        key, model: m, voice, variant: lang || '',
+        // A German sample of a multilingual voice is listed under German, next to its normal sample.
+        info: lang ? { ...info, lang, detail: 'German sample' } : info,
+        group: lang || C.languageGroup(m.id, voice),
+        text: sample?.text || C.sampleText(m.id, voice, lang),
         sample,
         failure: sample ? null : savedFailures[key] || null,
       };
-    }));
+    };
+    entries = models.flatMap(m => {
+      const list = C.voicesFor(m).map(voice => entryFor(m, voice));
+      const de = C.germanSampleVoice(m);
+      if (de !== null) list.push(entryFor(m, de, 'de'));
+      return list;
+    });
     byKey.clear();
     for (const e of entries) byKey.set(e.key, e);
   }
@@ -443,7 +452,7 @@
     if (!missing.length) { box.hidden = true; return; }
     const have = total - missing.length;
     const cost = missing.reduce((sum, e) => sum + estimateCost(e.model, e.text), 0);
-    const untouched = models.filter(m => C.voicesFor(m).every(v => !savedSamples[C.sampleKey(m.id, v)]));
+    const untouched = models.filter(m => entries.every(e => e.model !== m || !e.sample));
     const failed = missing.filter(e => e.failure).length;
     const command = 'node scripts/generate-samples.mjs';
     const keyInput = h('input', {
@@ -573,7 +582,7 @@
     ref.download.hidden = !src;
     if (src) {
       ref.download.href = src;
-      ref.download.setAttribute('download', `${C.sampleBase(e.model.id, e.voice).split('/').slice(1).join('_')}.${e.sample?.file.split('.').pop() || 'mp3'}`);
+      ref.download.setAttribute('download', `${C.sampleBase(e.model.id, e.voice, e.variant).split('/').slice(1).join('_')}.${e.sample?.file.split('.').pop() || 'mp3'}`);
     }
     let text = '';
     let bad = false;

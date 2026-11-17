@@ -98,24 +98,65 @@
     }
   }
 
-  /** The sentence each voice speaks in its sample. Seed Audio treats input as a prompt, so it gets one. */
-  function sampleText(modelId, voice) {
-    if (modelId.startsWith('bytedance-seed/')) return 'A friendly narrator says: "Hi! This is a quick sample of my voice."';
+  /**
+   * The sentence each voice speaks in its sample. Seed Audio treats input as a prompt, so it gets one.
+   * `lang` (a base code such as 'de') asks for a sample in that language instead of the voice's own.
+   */
+  function sampleText(modelId, voice, lang) {
     const info = voiceInfo(modelId, voice);
-    const base = (info.lang || 'en').split('-')[0];
+    const base = lang || (info.lang || 'en').split('-')[0];
     const [named, plain] = SAMPLE_TEXT[base] || SAMPLE_TEXT.en;
+    if (modelId.startsWith('bytedance-seed/')) {
+      return base === 'en' ? 'A friendly narrator says: "Hi! This is a quick sample of my voice."' : `A friendly narrator says: "${plain}"`;
+    }
     return info.personal ? named.replace('{name}', info.name) : plain;
+  }
+
+  // Models whose providers document German synthesis. Not every voice sounds native in German.
+  const GERMAN_MODELS = new Set([
+    'speechify/simba-3.5', 'assemblyai/assemblyai-tts-1',
+    'heygen/heygen-voice-1', 'heygen/heygen-voice-1-turbo', 'heygen/heygen-voice-1-turbo:free',
+    'mistralai/voxtral-mini-tts-3-0', 'mistralai/voxtral-mini-tts-2603',
+    'fish-audio/drama-3', 'fish-audio/s1', 'fish-audio/s2-pro', 'fish-audio/s2.1-pro', 'fish-audio/s2.1-pro-free:free',
+    'elevenlabs/eleven-v4', 'elevenlabs/eleven-v4-turbo', 'elevenlabs/eleven-v3', 'elevenlabs/eleven-v3-conversational',
+    'elevenlabs/eleven-flash-v2.5', 'elevenlabs/eleven-turbo-v2.5', 'elevenlabs/eleven-multilingual-v2',
+    'microsoft/mai-voice-2.1', 'microsoft/mai-voice-2.1-flash', 'microsoft/mai-voice-2', 'microsoft/mai-voice-2-flash',
+    'bytedance-seed/seed-audio-1-0',
+    'google/gemini-3.8-flash-tts', 'google/gemini-3.8-flash-lite-tts', 'google/gemini-3.1-flash-tts-preview',
+    'deepgram/aura-2', 'deepgram/flux-tts',
+    'qwen/qwen-audio-3.0-tts-flash', 'qwen/qwen-audio-3.0-tts-plus',
+    'minimax/speech-2.8-hd', 'minimax/speech-2.8-turbo',
+    'x-ai/grok-voice-tts-1.0',
+  ]);
+  // Voices to prefer for the German sample when the first one in the list is not the best choice.
+  const GERMAN_VOICE = {
+    'mistralai/voxtral-mini-tts-3-0': 'voice_481', // Heidi, the native German preset
+    'mistralai/voxtral-mini-tts-2603': 'en_paul_neutral',
+  };
+
+  /**
+   * The voice to use for a model's extra German sample, or null when the model needs none:
+   * either it is not documented to speak German, or one of its own voices is already German.
+   * '' means the model's default voice.
+   */
+  function germanSampleVoice(model) {
+    if (!GERMAN_MODELS.has(model.id)) return null;
+    const voices = voicesFor(model);
+    if (voices.some(v => languageGroup(model.id, v) === 'de')) return null;
+    const pick = GERMAN_VOICE[model.id];
+    return pick !== undefined && voices.includes(pick) ? pick : voices[0];
   }
 
   const slug = s => String(s).replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^\.+/, '_');
 
   /** Where a sample lives, relative to the project root and without a file extension. */
-  function sampleBase(modelId, voice) {
+  function sampleBase(modelId, voice, lang) {
     const [provider, ...rest] = modelId.split('/');
-    return `samples/${slug(provider)}/${slug(rest.join('/'))}/${voice ? slug(voice) : '_default'}`;
+    return `samples/${slug(provider)}/${slug(rest.join('/'))}/${voice ? slug(voice) : '_default'}${lang ? `.${lang}` : ''}`;
   }
 
-  const sampleKey = (modelId, voice) => `${modelId}|${voice || ''}`;
+  /** Samples in a language other than the voice's own get that language as a third part of the key. */
+  const sampleKey = (modelId, voice, lang) => `${modelId}|${voice || ''}${lang ? `|${lang}` : ''}`;
 
   // Gemini and HeyGen speech only come back as raw PCM through OpenRouter; asking for mp3 is a 400.
   const PCM_ONLY = /^(google|heygen)\//;
@@ -144,5 +185,5 @@
     return Array.isArray(vs) && vs.length ? vs : [''];
   }
 
-  root.VoiceCatalog = { voiceInfo, languageGroup, languageName, sampleText, sampleBase, sampleKey, voicesFor, responseFormat, learnFormatFromError };
+  root.VoiceCatalog = { voiceInfo, languageGroup, languageName, sampleText, sampleBase, sampleKey, germanSampleVoice, voicesFor, responseFormat, learnFormatFromError };
 })(typeof globalThis !== 'undefined' ? globalThis : window);
