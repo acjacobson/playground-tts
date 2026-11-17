@@ -211,7 +211,7 @@
   <footer>
     Voices and models come from OpenRouter's <a href="https://openrouter.ai/models?output_modalities=speech" target="_blank" rel="noopener">speech model list</a>.
     Languages are read from voice IDs. "Multilingual" voices speak the language of the text you give them, and their samples are in English.
-    Models documented to speak German also have one German sample, on a voice marked "German sample". Which voices sound native in German is not tested.
+    Every multilingual voice on a model documented to speak German also has a German version, marked "German sample". Which voices sound native in German is not tested.
   </footer>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -347,8 +347,7 @@
     };
     entries = models.flatMap(m => {
       const list = C.voicesFor(m).map(voice => entryFor(m, voice));
-      const de = C.germanSampleVoice(m);
-      if (de !== null) list.push(entryFor(m, de, 'de'));
+      for (const de of C.germanSampleVoices(m)) list.push(entryFor(m, de, 'de'));
       return list;
     });
     byKey.clear();

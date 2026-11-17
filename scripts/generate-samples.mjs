@@ -23,8 +23,8 @@ Options:
   --yes              Skip the confirmation prompt.
   --provider=a,b     Only these providers, e.g. --provider=elevenlabs,google
   --model=id,id      Only these model IDs, e.g. --model=deepgram/aura-2
-  --german           Only the extra German samples, one per German-capable model that has no
-                     German voice of its own.
+  --german           Only the extra German samples: a German version of every multilingual voice
+                     on models that speak German but have no German voice of their own.
   --limit=N          Generate at most N samples in this run.
   --concurrency=N    Requests in parallel (default 4, max 16).
   --force            Regenerate samples that already exist, within the filters above.
@@ -40,7 +40,7 @@ const MANIFEST_PATH = path.join(SAMPLES_DIR, 'manifest.js');
 const AUDIO_EXTS = ['mp3', 'wav', 'ogg', 'flac', 'aac'];
 
 vm.runInThisContext(fs.readFileSync(path.join(ROOT, 'voice-catalog.js'), 'utf8'), { filename: 'voice-catalog.js' });
-const { sampleText, sampleBase, sampleKey, germanSampleVoice, voicesFor, responseFormat, learnFormatFromError } = globalThis.VoiceCatalog;
+const { sampleText, sampleBase, sampleKey, germanSampleVoices, voicesFor, responseFormat, learnFormatFromError } = globalThis.VoiceCatalog;
 
 // ---------- options ----------
 function fail(message) {
@@ -311,13 +311,12 @@ async function main() {
   }
   console.log(`${models.length} models.`);
 
-  // Every voice, plus one extra German sample for German-capable models with no German voice of their own.
+  // Every voice, plus a German sample of each multilingual voice on German-capable models.
   const targets = models.flatMap(m => {
     const own = voicesFor(m).map(voice => ({
       model: m, voice, key: sampleKey(m.id, voice), base: sampleBase(m.id, voice), text: sampleText(m.id, voice),
     }));
-    const de = germanSampleVoice(m);
-    if (de !== null) own.push({
+    for (const de of germanSampleVoices(m)) own.push({
       model: m, voice: de, lang: 'de', key: sampleKey(m.id, de, 'de'), base: sampleBase(m.id, de, 'de'), text: sampleText(m.id, de, 'de'),
     });
     return own;

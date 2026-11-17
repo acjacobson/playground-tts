@@ -128,23 +128,26 @@
     'minimax/speech-2.8-hd', 'minimax/speech-2.8-turbo',
     'x-ai/grok-voice-tts-1.0',
   ]);
-  // Voices to prefer for the German sample when the first one in the list is not the best choice.
+  // For a model with no multilingual voices, the voice to use for its single German sample.
   const GERMAN_VOICE = {
-    'mistralai/voxtral-mini-tts-3-0': 'voice_481', // Heidi, the native German preset
     'mistralai/voxtral-mini-tts-2603': 'en_paul_neutral',
   };
 
   /**
-   * The voice to use for a model's extra German sample, or null when the model needs none:
-   * either it is not documented to speak German, or one of its own voices is already German.
-   * '' means the model's default voice.
+   * The voices that get an extra German sample. A German-capable model with no German voice of its
+   * own gets one for every multilingual voice, which is any voice not tied to a language. A model
+   * whose voices all name another language gets a single sample, so the model is still covered.
+   * '' stands for the model's default voice. Returns [] when the model needs none: it is not
+   * documented to speak German, or it already has German voices.
    */
-  function germanSampleVoice(model) {
-    if (!GERMAN_MODELS.has(model.id)) return null;
+  function germanSampleVoices(model) {
+    if (!GERMAN_MODELS.has(model.id)) return [];
     const voices = voicesFor(model);
-    if (voices.some(v => languageGroup(model.id, v) === 'de')) return null;
+    if (voices.some(v => languageGroup(model.id, v) === 'de')) return [];
+    const multilingual = voices.filter(v => languageGroup(model.id, v) === 'multi');
+    if (multilingual.length) return multilingual;
     const pick = GERMAN_VOICE[model.id];
-    return pick !== undefined && voices.includes(pick) ? pick : voices[0];
+    return [pick !== undefined && voices.includes(pick) ? pick : voices[0]];
   }
 
   const slug = s => String(s).replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^\.+/, '_');
@@ -185,5 +188,5 @@
     return Array.isArray(vs) && vs.length ? vs : [''];
   }
 
-  root.VoiceCatalog = { voiceInfo, languageGroup, languageName, sampleText, sampleBase, sampleKey, germanSampleVoice, voicesFor, responseFormat, learnFormatFromError };
+  root.VoiceCatalog = { voiceInfo, languageGroup, languageName, sampleText, sampleBase, sampleKey, germanSampleVoices, voicesFor, responseFormat, learnFormatFromError };
 })(typeof globalThis !== 'undefined' ? globalThis : window);
